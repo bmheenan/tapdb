@@ -1,35 +1,22 @@
 package tapdb
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/bmheenan/tapstruct"
 )
 
-var getPersonteamQuery = `
-SELECT
-	email,
-	name,
-	abbrev,
-	colorf,
-	colorb
-FROM
-	personteams
-WHERE
-	email = %v
+const keyGetPersonteam = "getpersonteam"
+const qryGetPersonteam = `
 `
 
-func (t *tapdb) GetPersonteam(email string) (tapstruct.Personteam, error) {
-	rows, err := t.db.Query(fmt.Sprintf(getPersonteamQuery, email))
-	if err != nil {
-		return tapstruct.Personteam{}, fmt.Errorf("Could not query for personteam: %v", err)
-	}
-	defer rows.Close()
-	rows.Next()
-	res := tapstruct.Personteam{}
-	err = rows.Scan(&res.Email, &res.Name, &res.Abbrev, &res.ColorF, &res.ColorB)
-	if err != nil {
-		return tapstruct.Personteam{}, fmt.Errorf("Could not get data from query result: %v", err)
-	}
-	return res, nil
+func (db *mySQLDB) initGetPersonteam() error {
+	var err error
+	db.stmts[keyGetPersonteam], err = db.conn.Prepare(qryGetPersonteam)
+	return err
+}
+
+// GetPersonteam takes an email and returns a struct with its details
+func (db *mySQLDB) GetPersonteam(email string) (*tapstruct.Personteam, error) {
+	return &tapstruct.Personteam{}, errors.New("Not implemented")
 }
