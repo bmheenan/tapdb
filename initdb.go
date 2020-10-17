@@ -8,10 +8,15 @@ import (
 	"os"
 
 	"github.com/bmheenan/tapstruct"
+	"github.com/go-sql-driver/mysql"
 )
+
+// ErrNotFound is wrapped and returned in cases where a query has no matches
+var ErrNotFound = errors.New("Not found")
 
 // DBInterface defines which actions can be taken against the database
 type DBInterface interface {
+	NewPersonteam(*tapstruct.Personteam) error
 	GetPersonteam(email string) (*tapstruct.Personteam, error)
 }
 
@@ -21,6 +26,8 @@ type mySQLDB struct {
 	stmts map[string](*sql.Stmt)
 }
 
+var _ mysql.Config // keep the compiler from cleaning up the import. sql.Open needs it
+
 // InitDB initializes a db connection and returns a DBInterface with the available methods
 func InitDB() (DBInterface, error) {
 	var cv = &connVars{}
@@ -29,9 +36,11 @@ func InitDB() (DBInterface, error) {
 		// Running in prod
 		cv.unixSocket = "/cloudsql/"
 	} else {
-		// Running locally
+		// Running locally. Config for the Cloud SQL proxy
+		// https://cloud.google.com/sql/docs/mysql/quickstart-proxy-test
 		cv.host = "localhost"
-		cv.port = "3036"
+		cv.port = "3306"
+		cv.dbName = ""
 	}
 	db := &mySQLDB{}
 	var err1 error
@@ -46,12 +55,14 @@ func InitDB() (DBInterface, error) {
 	if err2 != nil {
 		return &mySQLDB{}, fmt.Errorf("Could not make db tables: %v", err2)
 	}
+	db.stmts = make(map[string](*sql.Stmt))
 	initFuncs := []struct {
 		key string
 		f   func() error
 	}{
 		// Every init for each exported function must be added here
 		{keyGetPersonteam, db.initGetPersonteam},
+		{keyNewPersonteam, db.initNewPersonteam},
 	}
 	for _, v := range initFuncs {
 		initErr := v.f()
