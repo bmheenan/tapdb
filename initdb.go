@@ -16,8 +16,8 @@ var ErrNotFound = errors.New("Not found")
 
 // DBInterface defines which actions can be taken against the database
 type DBInterface interface {
-	NewPersonteam(*tapstruct.Personteam) error
-	GetPersonteam(email string) (*tapstruct.Personteam, error)
+	NewPersonteam(*tapstruct.Personteam, string) error
+	GetPersonteam(string, int) (*tapstruct.Personteam, error)
 }
 
 // MySQL implementation of DBInterface

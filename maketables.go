@@ -18,15 +18,30 @@ func (m *mySQLDB) makeTables() error {
 
 	_, errCreatePersonteam := m.conn.Exec(`
 		CREATE TABLE IF NOT EXISTS personteams (
-			email  VARCHAR(255) NOT NULL,
-			name   VARCHAR(255) NOT NULL,
-			abbrev VARCHAR(63) NOT NULL,
-			colorf VARCHAR(63) NOT NULL,
-			colorb VARCHAR(63) NOT NULL,
-			PRIMARY KEY (email)
+			email       VARCHAR(255) NOT NULL,
+			domain      VARCHAR(255) NOT NULL,
+			name        VARCHAR(255) NOT NULL,
+			abbrev      VARCHAR(63)  NOT NULL,
+			colorf      VARCHAR(63)  NOT NULL,
+			colorb      VARCHAR(63)  NOT NULL,
+			haschildren BOOLEAN      NOT NULL,
+			PRIMARY KEY (email, domain),
+			INDEX(email, domain)
 		);`)
 	if errCreatePersonteam != nil {
 		return fmt.Errorf("Could not create personteams table: %v", errCreatePersonteam)
+	}
+
+	_, errCreatePersonteamPC := m.conn.Exec(`
+		CREATE TABLE IF NOT EXISTS personteams_parent_child (
+			parent VARCHAR(255) NOT NULL,
+			child  VARCHAR(255) NOT NULL,
+			PRIMARY KEY (parent, child),
+			INDEX(parent),
+			INDEX(child)
+		);`)
+	if errCreatePersonteamPC != nil {
+		return fmt.Errorf("Could not create personteams_parent_child table: %v", errCreatePersonteamPC)
 	}
 	return nil
 }
