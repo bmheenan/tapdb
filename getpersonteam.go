@@ -26,6 +26,8 @@ const keyGetPersonteamChildren = "getpersonteamchildren"
 const qryGetPersonteamChildren = `
 SELECT
 	child
+FROM
+	personteams_parent_child
 WHERE
 	parent = ?`
 
@@ -50,7 +52,7 @@ func (db *mySQLDB) GetPersonteam(email string, depth int) (*tapstruct.Personteam
 	pt := &tapstruct.Personteam{}
 	err := db.fillInPersonteam(email, depth, pt)
 	if err != nil {
-		return &tapstruct.Personteam{}, fmt.Errorf("Could not get personteam %v: %v", email, err)
+		return &tapstruct.Personteam{}, fmt.Errorf("Could not get personteam %v: %w", email, err)
 	}
 	return pt, nil
 }
@@ -58,6 +60,10 @@ func (db *mySQLDB) GetPersonteam(email string, depth int) (*tapstruct.Personteam
 func (db *mySQLDB) fillInPersonteam(email string, depth int, pt *tapstruct.Personteam) error {
 	if len(email) == 0 {
 		return errors.New("Email cannot be blank")
+	}
+	_, errUse := db.conn.Exec(`USE tapestry`)
+	if errUse != nil {
+		return fmt.Errorf("Could not `USE` database: %v", errUse)
 	}
 	result := db.stmts[keyGetPersonteam].QueryRow(email)
 	err := result.Scan(&pt.Email, &pt.Domain, &pt.Name, &pt.Abbrev, &pt.ColorF, &pt.ColorB, &pt.HasChildren)
@@ -80,11 +86,11 @@ func (db *mySQLDB) fillInPersonteam(email string, depth int, pt *tapstruct.Perso
 				return fmt.Errorf("Could not scan email from children lookup: %v", errScn)
 			}
 			child := tapstruct.Personteam{}
-			pt.Children = append(pt.Children, child)
 			errFill := db.fillInPersonteam(chEmail, depth-1, &child)
 			if errFill != nil {
 				return fmt.Errorf("Could not fill in details for child %v: %v", chEmail, errFill)
 			}
+			pt.Children = append(pt.Children, child)
 		}
 	}
 	return nil

@@ -2,8 +2,8 @@ package tapdb
 
 import "fmt"
 
-func (m *mySQLDB) makeTables() error {
-	_, errCreateDB := m.conn.Exec(`
+func (db *mySQLDB) makeTables() error {
+	_, errCreateDB := db.conn.Exec(`
 		CREATE DATABASE IF NOT EXISTS tapestry
 		DEFAULT CHARACTER SET = 'utf8'
 		DEFAULT COLLATE 'utf8_general_ci';`)
@@ -11,12 +11,12 @@ func (m *mySQLDB) makeTables() error {
 		return fmt.Errorf("Could not create database: %v", errCreateDB)
 	}
 
-	_, errUse := m.conn.Exec(`USE tapestry`)
+	_, errUse := db.conn.Exec(`USE tapestry`)
 	if errUse != nil {
 		return fmt.Errorf("Could not `USE` database: %v", errUse)
 	}
 
-	_, errCreatePersonteam := m.conn.Exec(`
+	_, errCreatePersonteam := db.conn.Exec(`
 		CREATE TABLE IF NOT EXISTS personteams (
 			email       VARCHAR(255) NOT NULL,
 			domain      VARCHAR(255) NOT NULL,
@@ -32,10 +32,11 @@ func (m *mySQLDB) makeTables() error {
 		return fmt.Errorf("Could not create personteams table: %v", errCreatePersonteam)
 	}
 
-	_, errCreatePersonteamPC := m.conn.Exec(`
+	_, errCreatePersonteamPC := db.conn.Exec(`
 		CREATE TABLE IF NOT EXISTS personteams_parent_child (
 			parent VARCHAR(255) NOT NULL,
 			child  VARCHAR(255) NOT NULL,
+			domain VARCHAR(255) NOT NULL,
 			PRIMARY KEY (parent, child),
 			INDEX(parent),
 			INDEX(child)

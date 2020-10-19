@@ -18,6 +18,7 @@ var ErrNotFound = errors.New("Not found")
 type DBInterface interface {
 	NewPersonteam(*tapstruct.Personteam, string) error
 	GetPersonteam(string, int) (*tapstruct.Personteam, error)
+	ClearDomain(string) error
 }
 
 // MySQL implementation of DBInterface
@@ -63,6 +64,7 @@ func InitDB() (DBInterface, error) {
 		// Every init for each exported function must be added here
 		{keyGetPersonteam, db.initGetPersonteam},
 		{keyNewPersonteam, db.initNewPersonteam},
+		{keyClearDomainPT, db.initClearDomain},
 	}
 	for _, v := range initFuncs {
 		initErr := v.f()
