@@ -28,13 +28,13 @@ func (db *mySQLDB) initClearDomain() error {
 }
 
 func (db *mySQLDB) ClearDomain(dom string) error {
-	_, errPT := db.stmts[keyClearDomainPT].Exec(dom)
-	if errPT != nil {
-		return fmt.Errorf("Could not delete personteams matching domain %v: %v", dom, errPT)
-	}
 	_, errPTPC := db.stmts[keyClearDomainPTPC].Exec(dom)
 	if errPTPC != nil {
 		return fmt.Errorf("Could not delete personteam parent/child relationships matching domain %v: %v", dom, errPTPC)
+	}
+	_, errPT := db.stmts[keyClearDomainPT].Exec(dom)
+	if errPT != nil {
+		return fmt.Errorf("Could not delete personteams matching domain %v: %v", dom, errPT)
 	}
 	return nil
 }

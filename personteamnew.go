@@ -15,8 +15,10 @@ INSERT INTO personteams (
 	abbrev,
 	colorf,
 	colorb,
+	iterationtiming,
 	haschildren
 ) VALUES (
+	?,
 	?,
 	?,
 	?,
@@ -66,7 +68,14 @@ func (db *mySQLDB) NewPersonteam(pt *tapstruct.Personteam, parentEmail string) e
 	if errUse != nil {
 		return fmt.Errorf("Could not `USE` database: %v", errUse)
 	}
-	_, err := db.stmts[keyNewPersonteam].Exec(pt.Email, pt.Domain, pt.Name, pt.Abbrev, pt.ColorF, pt.ColorB)
+	_, err := db.stmts[keyNewPersonteam].Exec(
+		pt.Email,
+		pt.Domain,
+		pt.Name,
+		pt.Abbrev,
+		pt.ColorF,
+		pt.ColorB,
+		pt.IterTiming)
 	if err != nil {
 		return fmt.Errorf("Could not insert new personteam: %v", err)
 	}

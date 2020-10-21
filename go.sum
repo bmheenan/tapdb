@@ -1,4 +1,6 @@
 github.com/bmheenan/tapstruct v0.0.0-20201017014047-020486e422ca h1:De8FpNdwq4DiDzLymlI+9lltj5kXezJ1B0JAzhpV8LI=
 github.com/bmheenan/tapstruct v0.0.0-20201017014047-020486e422ca/go.mod h1:MemFiXUUxznBu9YkVZnX2Wl7nSMAgMqgjBBKEobcTHY=
+github.com/bmheenan/tapstruct v0.0.0-20201021131345-9edd6dad48b2 h1:xZj71hN7mx+dYlLHgZzjvDdkIcW6AeDf57uSk8hJ53k=
+github.com/bmheenan/tapstruct v0.0.0-20201021131345-9edd6dad48b2/go.mod h1:MemFiXUUxznBu9YkVZnX2Wl7nSMAgMqgjBBKEobcTHY=
 github.com/go-sql-driver/mysql v1.5.0 h1:ozyZYNQW3x3HtqT1jira07DN2PArx2v7/mN66gGcHOs=
 github.com/go-sql-driver/mysql v1.5.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg=

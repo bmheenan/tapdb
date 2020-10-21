@@ -19,12 +19,13 @@ func TestNewAndGetPersonteam(t *testing.T) {
 		return
 	}
 	errNew := db.NewPersonteam(&tapstruct.Personteam{
-		Email:  "adam@example.com",
-		Domain: "example.com",
-		Name:   "Adam",
-		Abbrev: "AD",
-		ColorF: "#ffffff",
-		ColorB: "#1f57cf",
+		Email:      "adam@example.com",
+		Domain:     "example.com",
+		Name:       "Adam",
+		Abbrev:     "AD",
+		ColorF:     "#ffffff",
+		ColorB:     "#1f57cf",
+		IterTiming: tapstruct.Monthly,
 	}, "")
 	if errNew != nil {
 		t.Errorf("NewPersonteam returned an error: %v", errNew)
@@ -40,7 +41,8 @@ func TestNewAndGetPersonteam(t *testing.T) {
 		pt.Name != "Adam" ||
 		pt.Abbrev != "AD" ||
 		pt.ColorF != "#ffffff" ||
-		pt.ColorB != "#1f57cf" {
+		pt.ColorB != "#1f57cf" ||
+		pt.IterTiming != tapstruct.Monthly {
 		t.Errorf("GetPersonteam didn't have the expected results: %v", pt)
 		return
 	}
@@ -64,15 +66,17 @@ func TestNewBulkAndGetPersonteam(t *testing.T) {
 		Abbrev:      "TM",
 		ColorF:      "#ffffff",
 		ColorB:      "#1f57cf",
+		IterTiming:  tapstruct.Monthly,
 		HasChildren: true,
 		Children: []tapstruct.Personteam{
 			tapstruct.Personteam{
-				Email:  "taylor@example.com",
-				Domain: "example.com",
-				Name:   "Taylor",
-				Abbrev: "TA",
-				ColorF: "#ffffff",
-				ColorB: "#1f57cf",
+				Email:      "taylor@example.com",
+				Domain:     "example.com",
+				Name:       "Taylor",
+				Abbrev:     "TA",
+				ColorF:     "#ffffff",
+				ColorB:     "#1f57cf",
+				IterTiming: tapstruct.Biweekly,
 			},
 		},
 	}, "")
@@ -90,7 +94,8 @@ func TestNewBulkAndGetPersonteam(t *testing.T) {
 		pt.Name != "Team" ||
 		pt.Abbrev != "TM" ||
 		pt.ColorF != "#ffffff" ||
-		pt.ColorB != "#1f57cf" {
+		pt.ColorB != "#1f57cf" ||
+		pt.IterTiming != tapstruct.Monthly {
 		t.Errorf("GetPersonteam didn't have the expected results: %v", pt)
 		return
 	}
@@ -101,7 +106,8 @@ func TestNewBulkAndGetPersonteam(t *testing.T) {
 	child := pt.Children[0]
 	if child.Email != "taylor@example.com" ||
 		child.Name != "Taylor" ||
-		child.HasChildren != false {
+		child.HasChildren != false ||
+		child.IterTiming != tapstruct.Biweekly {
 		t.Errorf("The child didn't have the expected results: %v", child)
 		return
 	}
@@ -119,24 +125,26 @@ func TestNewAndGetPersonteamTree(t *testing.T) {
 		return
 	}
 	errNew := db.NewPersonteam(&tapstruct.Personteam{
-		Email:  "team@example.com",
-		Domain: "example.com",
-		Name:   "Team",
-		Abbrev: "TM",
-		ColorF: "#ffffff",
-		ColorB: "#1f57cf",
+		Email:      "team@example.com",
+		Domain:     "example.com",
+		Name:       "Team",
+		Abbrev:     "TM",
+		ColorF:     "#ffffff",
+		ColorB:     "#1f57cf",
+		IterTiming: tapstruct.Monthly,
 	}, "")
 	if errNew != nil {
 		t.Errorf("NewPersonteam returned an error: %v", errNew)
 		return
 	}
 	errNew = db.NewPersonteam(&tapstruct.Personteam{
-		Email:  "eve@example.com",
-		Domain: "example.com",
-		Name:   "Eve",
-		Abbrev: "EVE",
-		ColorF: "#ffffff",
-		ColorB: "#1f57cf",
+		Email:      "eve@example.com",
+		Domain:     "example.com",
+		Name:       "Eve",
+		Abbrev:     "EVE",
+		ColorF:     "#ffffff",
+		ColorB:     "#1f57cf",
+		IterTiming: tapstruct.Biweekly,
 	}, "team@example.com")
 	if errNew != nil {
 		t.Errorf("NewPersonteam returned an error when inserting child: %v", errNew)
@@ -152,7 +160,8 @@ func TestNewAndGetPersonteamTree(t *testing.T) {
 		pt.Name != "Team" ||
 		pt.Abbrev != "TM" ||
 		pt.ColorF != "#ffffff" ||
-		pt.ColorB != "#1f57cf" {
+		pt.ColorB != "#1f57cf" ||
+		pt.IterTiming != tapstruct.Monthly {
 		t.Errorf("GetPersonteam didn't have the expected results: %v", pt)
 		return
 	}
@@ -163,7 +172,8 @@ func TestNewAndGetPersonteamTree(t *testing.T) {
 	child := pt.Children[0]
 	if child.Email != "eve@example.com" ||
 		child.Name != "Eve" ||
-		child.HasChildren != false {
+		child.HasChildren != false ||
+		child.IterTiming != tapstruct.Biweekly {
 		t.Errorf("The child didn't have the expected results: %v", child)
 		return
 	}
@@ -181,12 +191,13 @@ func TestGetNonExistingPersonteam(t *testing.T) {
 		return
 	}
 	errNew := db.NewPersonteam(&tapstruct.Personteam{
-		Email:  "team@example.com",
-		Domain: "example.com",
-		Name:   "Team",
-		Abbrev: "TM",
-		ColorF: "#ffffff",
-		ColorB: "#1f57cf",
+		Email:      "team@example.com",
+		Domain:     "example.com",
+		Name:       "Team",
+		Abbrev:     "TM",
+		ColorF:     "#ffffff",
+		ColorB:     "#1f57cf",
+		IterTiming: tapstruct.Monthly,
 	}, "")
 	if errNew != nil {
 		t.Errorf("NewPersonteam returned an error: %v", errNew)
@@ -210,5 +221,17 @@ func TestGetPersonteamDepthTooHigh(t *testing.T) {
 	_, err := db.GetPersonteam("ex@example.com", 6)
 	if err == nil {
 		t.Errorf("Did not receive an error when GetPersonteam's depth was too high")
+	}
+}
+
+func TestGetPersonteamBlankEmail(t *testing.T) {
+	db, errInit := InitDB()
+	if errInit != nil {
+		t.Errorf("Init returned error: %v", errInit)
+		return
+	}
+	_, err := db.GetPersonteam("", 0)
+	if err == nil {
+		t.Errorf("Did not receive an error when GetPersonteam's email was blank")
 	}
 }

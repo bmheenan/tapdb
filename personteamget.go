@@ -17,6 +17,7 @@ SELECT
 	abbrev,
 	colorf,
 	colorb,
+	iterationtiming,
 	haschildren
 FROM
 	personteams
@@ -57,6 +58,8 @@ func (db *mySQLDB) GetPersonteam(email string, depth int) (*tapstruct.Personteam
 	return pt, nil
 }
 
+// This func can be called recursively to fill in a tree of personteams. `pt` is a pointer to the personteam struct to
+// write the results into
 func (db *mySQLDB) fillInPersonteam(email string, depth int, pt *tapstruct.Personteam) error {
 	if len(email) == 0 {
 		return errors.New("Email cannot be blank")
@@ -66,7 +69,15 @@ func (db *mySQLDB) fillInPersonteam(email string, depth int, pt *tapstruct.Perso
 		return fmt.Errorf("Could not `USE` database: %v", errUse)
 	}
 	result := db.stmts[keyGetPersonteam].QueryRow(email)
-	err := result.Scan(&pt.Email, &pt.Domain, &pt.Name, &pt.Abbrev, &pt.ColorF, &pt.ColorB, &pt.HasChildren)
+	err := result.Scan(
+		&pt.Email,
+		&pt.Domain,
+		&pt.Name,
+		&pt.Abbrev,
+		&pt.ColorF,
+		&pt.ColorB,
+		&pt.IterTiming,
+		&pt.HasChildren)
 	if errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("No personteam with that email: %w", ErrNotFound)
 	}
