@@ -19,6 +19,8 @@ type DBInterface interface {
 	NewPersonteam(*tapstruct.Personteam, string) error
 	GetPersonteam(string, int) (*tapstruct.Personteam, error)
 	ClearDomain(string) error
+	IterationsByPersonteam(string) ([]string, error)
+	NewThread(*tapstruct.Threaddetail, int64, int64) (int64, error)
 }
 
 // MySQL implementation of DBInterface
@@ -27,7 +29,7 @@ type mySQLDB struct {
 	stmts map[string](*sql.Stmt)
 }
 
-var _ mysql.Config // keep the compiler from cleaning up the import. sql.Open needs it
+var _ mysql.Config // keep the linter from cleaning up the import. sql.Open needs it
 
 // InitDB initializes a db connection and returns a DBInterface with the available methods
 func InitDB() (DBInterface, error) {
@@ -65,6 +67,7 @@ func InitDB() (DBInterface, error) {
 		{keyGetPersonteam, db.initGetPersonteam},
 		{keyNewPersonteam, db.initNewPersonteam},
 		{keyClearDomainPT, db.initClearDomain},
+		{keyIterationsByPT, db.initIterationsByPersonteam},
 	}
 	for _, v := range initFuncs {
 		initErr := v.f()

@@ -19,18 +19,18 @@ SELECT
 	colorb,
 	iterationtiming,
 	haschildren
-FROM
+  FROM
 	personteams
-WHERE
-	email = ?`
+  WHERE
+	email = ?;`
 const keyGetPersonteamChildren = "getpersonteamchildren"
 const qryGetPersonteamChildren = `
 SELECT
 	child
-FROM
+  FROM
 	personteams_parent_child
-WHERE
-	parent = ?`
+  WHERE
+	parent = ?;`
 
 func (db *mySQLDB) initGetPersonteam() error {
 	var err error
