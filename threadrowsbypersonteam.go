@@ -114,7 +114,7 @@ func (db *mySQLDB) GetThreadrowsByPersonteamPlan(email string, iters []string) (
 		}
 		flatThs = append(flatThs, th)
 	}
-	pcRes, errPCQry := db.stmts[keyGetThreadrowsPC].Query(qryGetThreadrowsPC)
+	pcRes, errPCQry := db.stmts[keyGetThreadrowsPC].Query()
 	if errQry != nil {
 		return []tapstruct.Threadrow{}, fmt.Errorf("Could not query thread parent/child relationships: %v", errPCQry)
 	}
@@ -129,6 +129,7 @@ func (db *mySQLDB) GetThreadrowsByPersonteamPlan(email string, iters []string) (
 		rels = append(rels, rel)
 	}
 	threads := []tapstruct.Threadrow{}
+	// Top level of threads should only have those which aren't children of others
 	for _, v := range flatThs {
 		if !db.isInChildren(rels, v.ID) {
 			th, errTFA := db.threadrowFromArray(flatThs, v.ID)
@@ -138,6 +139,7 @@ func (db *mySQLDB) GetThreadrowsByPersonteamPlan(email string, iters []string) (
 			threads = append(threads, th)
 		}
 	}
+	// Then, nest the remaining ones
 	return threads, nil
 }
 
