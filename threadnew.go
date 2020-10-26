@@ -17,7 +17,7 @@ INSERT INTO threads (
 	ord,
 	percentile,
 	costdirect,
-	costtotal,
+	costtotal
   ) VALUES (
 	?,
 	?,
@@ -51,17 +51,19 @@ func (db *mySQLDB) initnewThread() error {
 	return err
 }
 
-// NewThread inserts a new thread into the db with the given details. You can also link it to an existing parent or
-// child by providing `parent` or `child` ids. Use 0 for this values to not link to existing threads.
-func (db *mySQLDB) NewThread(thread *tapstruct.Threaddetail, parent int64, child int64) (int64, error) {
-	_, errUse := db.conn.Exec(`USE tapestry`)
+// NewThread inserts a new thread into the db with the given details. You can also link it to existing threads as
+// parents or children by providing ids in `parents` or `children`.
+// It returns the id of the newly inserted thread if it was inserted
+func (db *mySQLDB) NewThread(thread *tapstruct.Threaddetail, parents []int64, children []int64) (int64, error) {
+	/*_, errUse := db.conn.Exec(`USE tapestry`)
 	if errUse != nil {
 		return 0, fmt.Errorf("Could not `USE` database: %v", errUse)
-	}
+	}*/
 	result, errInsert := db.stmts[keyNewThread].Exec(
 		thread.Name,
 		thread.Domain,
-		thread.Owner,
+		thread.Owner.Email,
+		thread.Iteration,
 		thread.State,
 		thread.Order,
 		thread.Percentile,
@@ -74,16 +76,16 @@ func (db *mySQLDB) NewThread(thread *tapstruct.Threaddetail, parent int64, child
 	if errID != nil {
 		return 0, fmt.Errorf("Could not get new insert id: %v", errID)
 	}
-	if parent > 0 {
-		_, errParent := db.stmts[keyNewThreadParentLink].Exec(parent, id, thread.Domain)
+	for _, p := range parents {
+		_, errParent := db.stmts[keyNewThreadParentLink].Exec(p, id, thread.Domain)
 		if errParent != nil {
-			return id, fmt.Errorf("Could not link to given parent thread: %v", errParent)
+			return id, fmt.Errorf("Could not link to given parent thread %v: %v", p, errParent)
 		}
 	}
-	if child > 0 {
-		_, errChild := db.stmts[keyNewThreadParentLink].Exec(id, child, thread.Domain)
+	for _, c := range children {
+		_, errChild := db.stmts[keyNewThreadParentLink].Exec(id, c, thread.Domain)
 		if errChild != nil {
-			return id, fmt.Errorf("Could not link to given child thread: %v", errChild)
+			return id, fmt.Errorf("Could not link to given child thread %v: %v", c, errChild)
 		}
 	}
 	return id, nil

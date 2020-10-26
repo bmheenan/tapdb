@@ -64,10 +64,10 @@ func (db *mySQLDB) fillInPersonteam(email string, depth int, pt *tapstruct.Perso
 	if len(email) == 0 {
 		return errors.New("Email cannot be blank")
 	}
-	_, errUse := db.conn.Exec(`USE tapestry`)
+	/*_, errUse := db.conn.Exec(`USE tapestry`)
 	if errUse != nil {
 		return fmt.Errorf("Could not `USE` database: %v", errUse)
-	}
+	}*/
 	result := db.stmts[keyGetPersonteam].QueryRow(email)
 	err := result.Scan(
 		&pt.Email,

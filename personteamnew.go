@@ -64,10 +64,10 @@ func (db *mySQLDB) initNewPersonteam() error {
 // `parentEmail`, or if `parentEmail` == "", it will be inserted at the root of the domain. Children can be provided,
 // and must also be new
 func (db *mySQLDB) NewPersonteam(pt *tapstruct.Personteam, parentEmail string) error {
-	_, errUse := db.conn.Exec(`USE tapestry`)
+	/*_, errUse := db.conn.Exec(`USE tapestry`)
 	if errUse != nil {
 		return fmt.Errorf("Could not `USE` database: %v", errUse)
-	}
+	}*/
 	_, err := db.stmts[keyNewPersonteam].Exec(
 		pt.Email,
 		pt.Domain,

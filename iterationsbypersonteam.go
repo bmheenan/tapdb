@@ -41,10 +41,10 @@ func (db *mySQLDB) IterationsByPersonteam(email string) ([]string, error) {
 	if email == "" {
 		return []string{}, errors.New("Email cannot be blank")
 	}
-	_, errUse := db.conn.Exec(`USE tapestry`)
+	/*_, errUse := db.conn.Exec(`USE tapestry`)
 	if errUse != nil {
 		return []string{}, fmt.Errorf("Could not `USE` database: %v", errUse)
-	}
+	}*/
 	result, errQry := db.stmts[keyIterationsByPT].Query(email, email)
 	if errQry != nil {
 		return []string{}, fmt.Errorf("Could not query for iterations: %v", errQry)

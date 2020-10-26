@@ -20,7 +20,8 @@ type DBInterface interface {
 	GetPersonteam(string, int) (*tapstruct.Personteam, error)
 	ClearDomain(string) error
 	IterationsByPersonteam(string) ([]string, error)
-	NewThread(*tapstruct.Threaddetail, int64, int64) (int64, error)
+	NewThread(*tapstruct.Threaddetail, []int64, []int64) (int64, error)
+	GetThreadrowsByPersonteamPlan(string, []string) ([]tapstruct.Threadrow, error)
 }
 
 // MySQL implementation of DBInterface
@@ -43,7 +44,7 @@ func InitDB() (DBInterface, error) {
 		// https://cloud.google.com/sql/docs/mysql/quickstart-proxy-test
 		cv.host = "localhost"
 		cv.port = "3306"
-		cv.dbName = ""
+		cv.dbName = "tapestry"
 	}
 	db := &mySQLDB{}
 	var err1 error
@@ -68,6 +69,8 @@ func InitDB() (DBInterface, error) {
 		{keyNewPersonteam, db.initNewPersonteam},
 		{keyClearDomainPT, db.initClearDomain},
 		{keyIterationsByPT, db.initIterationsByPersonteam},
+		{keyGetThreadrowsByPT, db.initGetThreadrowsByPersonteamPlan},
+		{keyNewThread, db.initnewThread},
 	}
 	for _, v := range initFuncs {
 		initErr := v.f()

@@ -11,10 +11,10 @@ func (db *mySQLDB) makeTables() error {
 		return fmt.Errorf("Could not create database: %v", errCreateDB)
 	}
 
-	_, errUse := db.conn.Exec(`USE tapestry`)
+	/*_, errUse := db.conn.Exec(`USE tapestry`)
 	if errUse != nil {
 		return fmt.Errorf("Could not `USE` database: %v", errUse)
-	}
+	}*/
 
 	_, errCreatePersonteam := db.conn.Exec(`
 		CREATE TABLE IF NOT EXISTS personteams (
