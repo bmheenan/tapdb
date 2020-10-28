@@ -20,8 +20,10 @@ type DBInterface interface {
 	GetPersonteam(string, int) (*tapstruct.Personteam, error)
 	ClearDomain(string) error
 	IterationsByPersonteam(string) ([]string, error)
-	NewThread(*tapstruct.Threaddetail, []int64, []int64) (int64, error)
+	NewThread(*tapstruct.Threaddetail, []*tapstruct.Threadrow, []*tapstruct.Threadrow) (int64, error)
 	GetThreadrowsByPersonteamPlan(string, []string) ([]tapstruct.Threadrow, error)
+	NewStakeholder(int64, *tapstruct.Personteam) error
+	MoveThread(*tapstruct.Threadrow, BeforeAfter, *tapstruct.Threadrow) error
 }
 
 // MySQL implementation of DBInterface
@@ -70,7 +72,9 @@ func InitDB() (DBInterface, error) {
 		{keyClearDomainPT, db.initClearDomain},
 		{keyIterationsByPT, db.initIterationsByPersonteam},
 		{keyGetThreadrowsByPT, db.initGetThreadrowsByPersonteamPlan},
-		{keyNewThread, db.initnewThread},
+		{keyNewThread, db.initNewThread},
+		{keyNewStakeholder, db.initNewStakeholder},
+		{"Move threads", db.initThreadMove},
 	}
 	for _, v := range initFuncs {
 		initErr := v.f()

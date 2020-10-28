@@ -4,6 +4,8 @@ github.com/bmheenan/tapstruct v0.0.0-20201021131345-9edd6dad48b2 h1:xZj71hN7mx+d
 github.com/bmheenan/tapstruct v0.0.0-20201021131345-9edd6dad48b2/go.mod h1:MemFiXUUxznBu9YkVZnX2Wl7nSMAgMqgjBBKEobcTHY=
 github.com/bmheenan/tapstruct v0.0.0-20201022123221-8eae36f4ad9a h1:N24eiz/jrryoeNzl/LdVsbttZ6nJZCq0QyqZxJnEaPc=
 github.com/bmheenan/tapstruct v0.0.0-20201022123221-8eae36f4ad9a/go.mod h1:MemFiXUUxznBu9YkVZnX2Wl7nSMAgMqgjBBKEobcTHY=
+github.com/bmheenan/tapstruct v0.0.0-20201027211959-90d570fb0ad3 h1:/trjmtPrXYVe57mmeexXHfwlfCVpwzTbFhY3o5eFJU8=
+github.com/bmheenan/tapstruct v0.0.0-20201027211959-90d570fb0ad3/go.mod h1:MemFiXUUxznBu9YkVZnX2Wl7nSMAgMqgjBBKEobcTHY=
 github.com/go-sql-driver/mysql v1.5.0 h1:ozyZYNQW3x3HtqT1jira07DN2PArx2v7/mN66gGcHOs=
 github.com/go-sql-driver/mysql v1.5.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg=
 github.com/lib/pq v1.8.0 h1:9xohqzkUwzR4Ga4ivdTcawVS89YSDVxXMa3xJX3cGzg=

@@ -8,26 +8,32 @@ const keyClearDomainPT = "cleardomainpersonteam"
 const qryClearDomainPT = `
 DELETE FROM
 	personteams
-WHERE
-	domain = ?`
+  WHERE
+	domain = ?;`
 const keyClearDomainPTPC = "cleardomainpersonteamparentchild"
 const qryClearDomainPTPC = `
 DELETE FROM
 	personteams_parent_child
-WHERE
-	domain = ?`
+  WHERE
+	domain = ?;`
 const keyClearDomainThreads = "cleardomainthreads"
 const qryClearDomainThreads = `
 DELETE FROM
 	threads
-WHERE
-	domain = ?`
+  WHERE
+	domain = ?;`
 const keyClearDomainThreadsPT = "cleardomainthreadsparentchild"
 const qryClearDomainThreadsPT = `
 DELETE FROM
 	threads_parent_child
-WHERE
-	domain = ?`
+  WHERE
+	domain = ?;`
+const keyClearDomainStakeholders = "cleardomainstakeholders"
+const qryClearDomainStakeholders = `
+DELETE FROM
+	threads_stakeholders
+  WHERE
+	domain = ?;`
 
 func (db *mySQLDB) initClearDomain() error {
 	var err error
@@ -44,10 +50,18 @@ func (db *mySQLDB) initClearDomain() error {
 		return err
 	}
 	db.stmts[keyClearDomainThreadsPT], err = db.conn.Prepare(qryClearDomainThreadsPT)
+	if err != nil {
+		return err
+	}
+	db.stmts[keyClearDomainStakeholders], err = db.conn.Prepare(qryClearDomainStakeholders)
 	return err
 }
 
 func (db *mySQLDB) ClearDomain(dom string) error {
+	_, errThreadStk := db.stmts[keyClearDomainStakeholders].Exec(dom)
+	if errThreadStk != nil {
+		return fmt.Errorf("Could not delete stakeholders matching domain %v: %v", dom, errThreadStk)
+	}
 	_, errThreadPC := db.stmts[keyClearDomainThreadsPT].Exec(dom)
 	if errThreadPC != nil {
 		return fmt.Errorf("Could not delete thread parent/child relationships matching domain %v: %v", dom, errThreadPC)
