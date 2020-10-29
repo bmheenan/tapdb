@@ -18,7 +18,7 @@ func (db *mySQLDB) concatInt64AsList(iters []int64) string {
 	res := ""
 	l := len(iters) - 1
 	for i, v := range iters {
-		res = res + fmt.Sprintf("'%s'", v)
+		res = res + fmt.Sprintf("'%d'", v)
 		if i < l {
 			res = res + ", "
 		}

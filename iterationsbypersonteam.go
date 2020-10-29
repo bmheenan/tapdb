@@ -34,7 +34,10 @@ SELECT
 func (db *mySQLDB) initIterationsByPersonteam() error {
 	var err error
 	db.stmts[keyIterationsByPT], err = db.conn.Prepare(qryIterationsByPT)
-	return err
+	if err != nil {
+		return fmt.Errorf("Could not init %v: %v", keyIterationsByPT, err)
+	}
+	return nil
 }
 
 func (db *mySQLDB) IterationsByPersonteam(email string) ([]string, error) {

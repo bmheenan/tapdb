@@ -9,95 +9,74 @@ import (
 
 const keyGetThreadrowsByPT = "getthreadrowsbypersonteam"
 const qryGetThreadrowsByPT = `
-SELECT     # dedupe any rows with a personteam listed as both an owner and stakeholder
-	       id,
-	       MAX(domain) AS domain,
-	       MAX(name) AS name,
-	       MAX(state) AS state,
-	       MAX(costdirect) AS costdirect,
-	       MAX(owner) AS owner,
-	       MAX(iteration) AS iteration,
-	       MAX(ord) AS ord,
-	       MAX(percentile) AS percentile
-  FROM     (
-           SELECT  id,
-		           domain,
-		           name,
-		           state,
-		           costdirect,
-		           owner,
-		           iteration,
-		           ord,
-		           percentile
-	         FROM  threads
-	         WHERE owner = '%v'
-	    	   AND iteration IN ( %v )
-	       UNION
-	       SELECT   t.id,
-		            t.domain,
-		            t.name,
-		            t.state,
-		            t.costdirect,
-		            t.owner,
-		            t.iteration,
-		            t.ord,
-		            t.percentile	
-	         FROM   threads AS t
-	           JOIN threads_stakeholders AS s
-	           ON   t.id = s.thread
-	         WHERE  s.stakeholder = '%v'
-		       AND  t.iteration IN ( %v )
-	       ) AS     unioned_results
-  GROUP BY id
-  ORDER BY percentile,
-           ord;`
+SELECT   id,
+	     MAX(domain) AS domain,
+	     MAX(name) AS name,
+	     MAX(state) AS state,
+	     MAX(costdirect) AS costdirect,
+	     MAX(owner) AS owner,
+	     MAX(iteration) AS iteration,
+	     MAX(ord) AS ord,
+		 MAX(percentile) AS percentile
+FROM     (
+         SELECT id,
+		        domain,
+		        name,
+		        state,
+		        costdirect,
+		        owner,
+		        iteration,
+		        ord,
+		        percentile
+	     FROM   threads
+	     WHERE  owner = '%v'
+	       AND  iteration IN ( %v )
+	     UNION
+	     SELECT t.id,
+		        t.domain,
+		        t.name,
+		        t.state,
+		        t.costdirect,
+		        t.owner,
+		        t.iteration,
+		        t.ord,
+		        t.percentile	
+	     FROM   threads AS t
+	       JOIN threads_stakeholders AS s
+	       ON   t.id = s.thread
+	     WHERE  s.stakeholder = '%v'
+		   AND  t.iteration IN ( %v )
+	     ) AS   unioned_results
+GROUP BY id
+ORDER BY percentile,
+         ord;`
 
 const keyGetThreadrowAncestors = "getthreadrowancestors"
 const qryGetThreadrowAncestors = `
-WITH RECURSIVE ancestors (child, parent) AS
-	(
-	SELECT
-		child,
-		parent
-	  FROM
-		threads_parent_child
-	  WHERE
-		child = ?
-	UNION ALL
-	SELECT
-		t.child,
-		t.parent
-	  FROM
-		threads_parent_child t
-	  INNER JOIN
-		ancestors
-	  ON
-		t.child = ancestors.parent
-	)
-SELECT
-	parent
-  FROM
-	ancestors
-  ORDER BY
-	parent;`
-
-/*`
-SELECT
-	parent,
-	child
-  FROM
-	threads_parent_child
-  WHERE
-	child = ?;`*/
+WITH     RECURSIVE ancestors (child, parent) AS
+         (
+         SELECT child,
+                parent
+         FROM   threads_parent_child
+         WHERE  child = ?
+         UNION ALL
+         SELECT t.child,
+                t.parent
+         FROM   threads_parent_child t
+         JOIN   ancestors
+           ON   t.child = ancestors.parent
+	     )
+SELECT   parent
+FROM     ancestors
+ORDER BY parent;`
 
 func (db *mySQLDB) initGetThreadrowsByPersonteamPlan() error {
 	var err error
-	/*db.stmts[keyGetThreadrowsByPT], err = db.conn.Prepare(qryGetThreadrowsByPT)
-	if err != nil {
-		return err
-	}*/
 	db.stmts[keyGetThreadrowAncestors], err = db.conn.Prepare(qryGetThreadrowAncestors)
-	return err
+	if err != nil {
+		return fmt.Errorf("Could not init %v: %v", keyGetThreadrowAncestors, err)
+	}
+	return nil
 }
 
 func (db *mySQLDB) GetThreadrowsByPersonteamPlan(email string, iters []string) ([]tapstruct.Threadrow, error) {

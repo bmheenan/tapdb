@@ -10,36 +10,33 @@ import (
 
 const keyGetPersonteam = "getpersonteam"
 const qryGetPersonteam = `
-SELECT
-	email,
-	domain,
-	name,
-	abbrev,
-	colorf,
-	colorb,
-	iterationtiming,
-	haschildren
-  FROM
-	personteams
-  WHERE
-	email = ?;`
+SELECT  email,
+	    domain,
+	    name,
+	    abbrev,
+	    colorf,
+	    colorb,
+	    iterationtiming,
+	    haschildren
+  FROM  personteams
+  WHERE email = ?;`
 const keyGetPersonteamChildren = "getpersonteamchildren"
 const qryGetPersonteamChildren = `
-SELECT
-	child
-  FROM
-	personteams_parent_child
-  WHERE
-	parent = ?;`
+SELECT  child
+  FROM  personteams_parent_child
+  WHERE parent = ?;`
 
 func (db *mySQLDB) initGetPersonteam() error {
 	var err error
 	db.stmts[keyGetPersonteam], err = db.conn.Prepare(qryGetPersonteam)
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not init %v: %v", keyGetPersonteam, err)
 	}
 	db.stmts[keyGetPersonteamChildren], err = db.conn.Prepare(qryGetPersonteamChildren)
-	return err
+	if err != nil {
+		return fmt.Errorf("Could not init %v: %v", keyGetPersonteamChildren, err)
+	}
+	return nil
 }
 
 // GetPersonteam takes an email and returns a struct with that person or team's details. It will also return child

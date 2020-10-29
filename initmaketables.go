@@ -11,11 +11,6 @@ func (db *mySQLDB) makeTables() error {
 		return fmt.Errorf("Could not create database: %v", errCreateDB)
 	}
 
-	/*_, errUse := db.conn.Exec(`USE tapestry`)
-	if errUse != nil {
-		return fmt.Errorf("Could not `USE` database: %v", errUse)
-	}*/
-
 	_, errCreatePersonteam := db.conn.Exec(`
 		CREATE TABLE IF NOT EXISTS personteams (
 			email           VARCHAR(255) NOT NULL,
@@ -51,17 +46,17 @@ func (db *mySQLDB) makeTables() error {
 
 	_, errCreateThreads := db.conn.Exec(`
 		CREATE TABLE IF NOT EXISTS threads (
-			id          INT            NOT NULL AUTO_INCREMENT,
-			name        VARCHAR(255)   NOT NULL,
-			domain      VARCHAR(255)   NOT NULL,
+			id          INT              NOT NULL AUTO_INCREMENT,
+			name        VARCHAR(255)     NOT NULL,
+			domain      VARCHAR(255)     NOT NULL,
 			description TEXT(65535),
-			owner       VARCHAR(255)   NOT NULL,
-			iteration   VARCHAR(255)   NOT NULL,
-			state       VARCHAR(255)   NOT NULL,
-			ord         INT            NOT NULL,
-			percentile  INT            NOT NULL,
-			costdirect  INT            NOT NULL,
-			costtotal   INT            NOT NULL,
+			owner       VARCHAR(255)     NOT NULL,
+			iteration   VARCHAR(255)     NOT NULL,
+			state       VARCHAR(255)     NOT NULL,
+			ord         INT              NOT NULL,
+			percentile  DOUBLE PRECISION NOT NULL,
+			costdirect  INT              NOT NULL,
+			costtotal   INT              NOT NULL,
 			PRIMARY KEY (id),
 			FOREIGN KEY (owner) REFERENCES personteams(email),
 			INDEX (owner),

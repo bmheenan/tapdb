@@ -11,28 +11,28 @@ import (
 
 const keyGetPrevThreadOrd = "getprevthreadord"
 const qryGetPrevThreadOrd = `
-SELECT  MAX(ord)
+SELECT  MAX(ord) AS ord
   FROM  threads
   WHERE owner = ?
     AND iteration = ?
-    AND order < ?;`
+    AND ord < ?;`
 const keyGetNextThreadOrd = "getnextthreadord"
 const qryGetNextThreadOrd = `
-SELECT  MIN(ord)
+SELECT  MIN(ord) AS ord
   FROM  threads
   WHERE owner = ?
     AND iteration = ?
-	AND order > ?;`
+	AND ord > ?;`
 const keyGetPrevThreadPct = "getprevthreadpct"
 const qryGetPrevThreadPct = `
-SELECT  MAX(ord)
+SELECT  MAX(ord) AS ord
   FROM  threads
   WHERE owner = ?
 	AND iteration = ?
 	AND percentile < ?;`
 const keyGetNextThreadPct = "getnextthreadpct"
 const qryGetNextThreadPct = `
-SELECT  MIN(ord)
+SELECT  MIN(ord) AS ord
   FROM  threads
   WHERE owner = ?
 	AND iteration = ?
@@ -41,29 +41,6 @@ const keyUpdateOrder = "updateorder"
 const qryUpdateOrder = `
 UPDATE  threads
   SET   ord = ?
-  WHERE id = ?;`
-const keyGetOrdPct = "getordpct"
-const qryGetOrdPct = `
-SELECT     id,
-		   ord,
-		   costdirect,
-	       percentile
-  FROM     threads
-  WHERE    owner = ?
-	AND    iteration = ?
-  ORDER BY ord;`
-const keyGetMaxPctChildren = "getmaxpctchildren"
-const qryGetMaxPctChildren = `
-SELECT   MAX(t.percentile)
-  FROM   threads t
-	JOIN threads_parent_child pc
-	ON   t.id = pc.child
-  WHERE  pc.parent = ?;`
-const keyUpdateOrdPct = "updateordpct"
-const qryUpdateOrdPct = `
-UPDATE  threads
-  SET   ord = ?,
-	    percentile = ?
   WHERE id = ?;`
 
 // BeforeAfter specifies if we should put the given thread before or after the reference thread
@@ -80,41 +57,32 @@ func (db *mySQLDB) initThreadMove() error {
 	var err error
 	db.stmts[keyUpdateOrder], err = db.conn.Prepare(qryUpdateOrder)
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not init %v: %v", keyUpdateOrder, err)
 	}
 	db.stmts[keyGetPrevThreadOrd], err = db.conn.Prepare(qryGetPrevThreadOrd)
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not init %v: %v", keyGetPrevThreadOrd, err)
 	}
 	db.stmts[keyGetNextThreadOrd], err = db.conn.Prepare(qryGetNextThreadOrd)
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not init %v: %v", keyGetNextThreadOrd, err)
 	}
 	db.stmts[keyGetPrevThreadPct], err = db.conn.Prepare(qryGetPrevThreadPct)
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not init %v: %v", keyGetPrevThreadPct, err)
 	}
 	db.stmts[keyGetNextThreadPct], err = db.conn.Prepare(qryGetNextThreadPct)
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not init %v: %v", keyGetNextThreadPct, err)
 	}
-	db.stmts[keyGetOrdPct], err = db.conn.Prepare(qryGetOrdPct)
-	if err != nil {
-		return err
-	}
-	db.stmts[keyGetMaxPctChildren], err = db.conn.Prepare(qryGetMaxPctChildren)
-	if err != nil {
-		return err
-	}
-	db.stmts[keyUpdateOrdPct], err = db.conn.Prepare(qryUpdateOrdPct)
-	return err
+	return nil
 }
 
 // MoveThread changes the order and the percentile of the given (first) thread to be either before or after the
 // reference (second) thread. `dir` specifies which of those you want: `Before` or `After`. If the owners of the two
 // threads are not the same, the move will only be approximate
 func (db *mySQLDB) MoveThread(thread *tapstruct.Threadrow, dir BeforeAfter, ref *tapstruct.Threadrow) error {
-	// TODO: If `ref` is a different owner than `thread`, the move is approx. Though it's impossible to make this
+	// TODO: If `ref` is a different owner than `thread`, the move is approximate. Though it's impossible to make this
 	// perfect (e.g. a smaller thread at the very beginning of an iteration will always be before a bigger thread at
 	// the beginning of the iteration), it could still be improved by checking if it's moving enough to actually place
 	// `thread` before/after `ref`, and if not, trying the next place until it succeeds or gets to the beginning/end
@@ -128,11 +96,11 @@ func (db *mySQLDB) MoveThread(thread *tapstruct.Threadrow, dir BeforeAfter, ref 
 	if thread.ID == 0 {
 		return errors.New("Thread ID must be specified")
 	}
-	if thread.Percentile < ref.Percentile || dir == Before {
+	if thread.Percentile < ref.Percentile && dir == Before {
 		// The thread is already before the reference. Nothing needs to be done
 		return nil
 	}
-	if thread.Percentile > ref.Percentile || dir == After {
+	if thread.Percentile > ref.Percentile && dir == After {
 		// The thread is already after the reference. Nothing needs to be done
 		return nil
 	}
@@ -184,49 +152,6 @@ func (db *mySQLDB) updateThreadOrder(id int64, ord int, owner string, iter strin
 	errCal := db.calibrateOrdPct(owner, iter)
 	if errCal != nil {
 		return fmt.Errorf("Could not calibrate ord and pct: %v", errCal)
-	}
-	return nil
-}
-
-func (db *mySQLDB) calibrateOrdPct(owner string, iter string) error {
-	res, errGet := db.stmts[keyGetOrdPct].Query(owner, iter)
-	if errGet != nil {
-		return fmt.Errorf("Could not query the owner's (%v) iteration (%v): %v", owner, iter, errGet)
-	}
-	defer res.Close()
-	threads := []*tapstruct.Threadrow{}
-	ttlCost := 0
-	for res.Next() {
-		th := tapstruct.Threadrow{}
-		errScn := res.Scan(&th.ID, &th.Order, &th.CostCtx, &th.Percentile)
-		if errScn != nil {
-			return fmt.Errorf("Could not scan threads: %v", errScn)
-		}
-		ttlCost += th.CostCtx
-		threads = append(threads, &th)
-	}
-	ordStep := math.MaxInt32 / (len(threads) + 1)
-	rnCost := 0
-	for i, th := range threads {
-		newOrd := (i + 1) * ordStep
-		rnCost += th.CostCtx
-		newPct := rnCost / ttlCost
-		resCh, errCh := db.stmts[keyGetMaxPctChildren].Query(th.ID)
-		if errCh != nil {
-			return fmt.Errorf("Could not query children of thread: %v", errCh)
-		}
-		defer resCh.Close()
-		chPct := 0
-		for resCh.Next() {
-			errScn := resCh.Scan(&chPct)
-			if errScn != nil {
-				return fmt.Errorf("Could not scan max percentile of children: %v", errScn)
-			}
-		}
-		_, errUpd := db.stmts[keyUpdateOrdPct].Exec(newOrd, db.max(newPct, chPct), th.ID)
-		if errUpd != nil {
-			return fmt.Errorf("Could not update order and percentile: %v", errUpd)
-		}
 	}
 	return nil
 }

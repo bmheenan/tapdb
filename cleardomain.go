@@ -39,22 +39,25 @@ func (db *mySQLDB) initClearDomain() error {
 	var err error
 	db.stmts[keyClearDomainPT], err = db.conn.Prepare(qryClearDomainPT)
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not init %v: %v", keyClearDomainPT, err)
 	}
 	db.stmts[keyClearDomainPTPC], err = db.conn.Prepare(qryClearDomainPTPC)
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not init %v: %v", keyClearDomainPTPC, err)
 	}
 	db.stmts[keyClearDomainThreads], err = db.conn.Prepare(qryClearDomainThreads)
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not init %v: %v", keyClearDomainThreads, err)
 	}
 	db.stmts[keyClearDomainThreadsPT], err = db.conn.Prepare(qryClearDomainThreadsPT)
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not init %v: %v", keyClearDomainThreadsPT, err)
 	}
 	db.stmts[keyClearDomainStakeholders], err = db.conn.Prepare(qryClearDomainStakeholders)
-	return err
+	if err != nil {
+		return fmt.Errorf("Could not init %v: %v", keyClearDomainStakeholders, err)
+	}
+	return nil
 }
 
 func (db *mySQLDB) ClearDomain(dom string) error {

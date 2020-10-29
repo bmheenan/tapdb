@@ -50,24 +50,23 @@ func (db *mySQLDB) initNewPersonteam() error {
 	var err error
 	db.stmts[keyNewPersonteam], err = db.conn.Prepare(qryNewPersonteam)
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not init %v: %v", keyNewPersonteam, err)
 	}
 	db.stmts[keyNewPersonteamParentLink], err = db.conn.Prepare(qryNewPersonteamParentLink)
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not init %v: %v", keyNewPersonteamParentLink, err)
 	}
 	db.stmts[keyNewPersonteamUpdateParent], err = db.conn.Prepare(qryNewPersonteamUpdateParent)
-	return err
+	if err != nil {
+		return fmt.Errorf("Could not init %v: %v", keyNewPersonteamUpdateParent, err)
+	}
+	return nil
 }
 
 // NewPersonteam inserts a new Personteam into the db, with the provided information. It will be a child of the given
 // `parentEmail`, or if `parentEmail` == "", it will be inserted at the root of the domain. Children can be provided,
 // and must also be new
 func (db *mySQLDB) NewPersonteam(pt *tapstruct.Personteam, parentEmail string) error {
-	/*_, errUse := db.conn.Exec(`USE tapestry`)
-	if errUse != nil {
-		return fmt.Errorf("Could not `USE` database: %v", errUse)
-	}*/
 	_, err := db.stmts[keyNewPersonteam].Exec(
 		pt.Email,
 		pt.Domain,

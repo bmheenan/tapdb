@@ -23,7 +23,10 @@ INSERT INTO threads_stakeholders (
 func (db *mySQLDB) initNewStakeholder() error {
 	var err error
 	db.stmts[keyNewStakeholder], err = db.conn.Prepare(qryNewStakeholder)
-	return err
+	if err != nil {
+		return fmt.Errorf("Could not init %v: %v", keyNewStakeholder, err)
+	}
+	return nil
 }
 
 // NewStakeholder makes `pt` a stakeholder of the thread with ID `thID`, if not already.

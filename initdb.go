@@ -49,37 +49,35 @@ func InitDB() (DBInterface, error) {
 		cv.dbName = "tapestry"
 	}
 	db := &mySQLDB{}
-	var err1 error
-	db.conn, err1 = sql.Open("mysql", cv.formatName())
-	if err1 != nil {
-		return &mySQLDB{}, fmt.Errorf("Could not establish mysql db connection: %v", err1)
+	var errO error
+	db.conn, errO = sql.Open("mysql", cv.formatName())
+	if errO != nil {
+		return &mySQLDB{}, fmt.Errorf("Could not establish mysql db connection: %v", errO)
 	}
 	if db.conn.Ping() == driver.ErrBadConn {
 		return &mySQLDB{}, errors.New("Could not establish a good connection to db: ping returned bad connection")
 	}
-	err2 := db.makeTables()
-	if err2 != nil {
-		return &mySQLDB{}, fmt.Errorf("Could not make db tables: %v", err2)
+	errMk := db.makeTables()
+	if errMk != nil {
+		return &mySQLDB{}, fmt.Errorf("Could not make db tables: %v", errMk)
 	}
 	db.stmts = make(map[string](*sql.Stmt))
-	initFuncs := []struct {
-		key string
-		f   func() error
-	}{
+	initFuncs := []func() error{
 		// Every init for each exported function must be added here
-		{keyGetPersonteam, db.initGetPersonteam},
-		{keyNewPersonteam, db.initNewPersonteam},
-		{keyClearDomainPT, db.initClearDomain},
-		{keyIterationsByPT, db.initIterationsByPersonteam},
-		{keyGetThreadrowsByPT, db.initGetThreadrowsByPersonteamPlan},
-		{keyNewThread, db.initNewThread},
-		{keyNewStakeholder, db.initNewStakeholder},
-		{"Move threads", db.initThreadMove},
+		db.initGetPersonteam,
+		db.initNewPersonteam,
+		db.initClearDomain,
+		db.initIterationsByPersonteam,
+		db.initGetThreadrowsByPersonteamPlan,
+		db.initNewThread,
+		db.initNewStakeholder,
+		db.initThreadMove,
+		db.initCalibrateOrdPct,
 	}
-	for _, v := range initFuncs {
-		initErr := v.f()
+	for _, f := range initFuncs {
+		initErr := f()
 		if initErr != nil {
-			return &mySQLDB{}, fmt.Errorf("Could not initialize function %s: %v", v.key, initErr)
+			return &mySQLDB{}, fmt.Errorf("Could not initialize function: %v", initErr)
 		}
 	}
 	return db, nil
