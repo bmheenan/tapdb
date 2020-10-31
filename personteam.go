@@ -54,7 +54,7 @@ func (db *mysqlDB) GetPersonteam(email string) (*taps.Personteam, error) {
 	defer qr.Close()
 	pt := &taps.Personteam{}
 	for qr.Next() {
-		errScn := qr.Scan(pt.Email, pt.Domain, pt.Name, pt.Abbrev, pt.ColorF, pt.ColorB, pt.IterTiming)
+		errScn := qr.Scan(&pt.Email, &pt.Domain, &pt.Name, &pt.Abbrev, &pt.ColorF, &pt.ColorB, &pt.IterTiming)
 		if errScn != nil {
 			return &taps.Personteam{}, fmt.Errorf("Could not scan personteam: %v", errScn)
 		}
