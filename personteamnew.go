@@ -8,43 +8,19 @@ import (
 
 const keyNewPersonteam = "newpersonteam"
 const qryNewPersonteam = `
-INSERT INTO personteams (
-	email,
-	domain,
-	name,
-	abbrev,
-	colorf,
-	colorb,
-	iterationtiming,
-	haschildren
-) VALUES (
-	?,
-	?,
-	?,
-	?,
-	?,
-	?,
-	?,
-	FALSE
-);`
+INSERT INTO personteams
+			(email, domain, name, abbrev, colorf, colorb, iterationtiming, haschildren)
+VALUES      (    ?,      ?,    ?,      ?,      ?,      ?,               ?,       FALSE);`
 const keyNewPersonteamParentLink = "newpersonteamparentlink"
 const qryNewPersonteamParentLink = `
-INSERT INTO personteams_parent_child (
-	parent,
-	child,
-	domain
-) VALUES (
-	?,
-	?,
-	?
-);`
+INSERT INTO personteams_parent_child
+			(parent, child, domain)
+VALUES      (     ?,     ?,      ?);`
 const keyNewPersonteamUpdateParent = "newpersonteamupdateparent"
 const qryNewPersonteamUpdateParent = `
 UPDATE personteams
-SET
-	haschildren = TRUE
-WHERE
-	email = ?`
+SET    haschildren = TRUE
+WHERE  email = ?`
 
 func (db *mySQLDB) initNewPersonteam() error {
 	var err error

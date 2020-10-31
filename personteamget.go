@@ -41,11 +41,11 @@ func (db *mySQLDB) initGetPersonteam() error {
 
 // GetPersonteam takes an email and returns a struct with that person or team's details. It will also return child
 // personteams up to the depth specified. `depth = 0` returns an empty `children` array, `depth = 1` returns max one
-// level of children, etc. It may not be larger than 5 (for perf reasons)
+// level of children, etc. It may not be larger than 10 (for perf reasons)
 // Returns a wrapped ErrNotFound if the provided email doesn't match anything
 func (db *mySQLDB) GetPersonteam(email string, depth int) (*tapstruct.Personteam, error) {
-	if depth > 5 {
-		return &tapstruct.Personteam{}, errors.New("Depth may not be larger than 5")
+	if depth > 10 {
+		return &tapstruct.Personteam{}, errors.New("Depth may not be larger than 10")
 	}
 	pt := &tapstruct.Personteam{}
 	err := db.fillInPersonteam(email, depth, pt)
@@ -61,10 +61,6 @@ func (db *mySQLDB) fillInPersonteam(email string, depth int, pt *tapstruct.Perso
 	if len(email) == 0 {
 		return errors.New("Email cannot be blank")
 	}
-	/*_, errUse := db.conn.Exec(`USE tapestry`)
-	if errUse != nil {
-		return fmt.Errorf("Could not `USE` database: %v", errUse)
-	}*/
 	result := db.stmts[keyGetPersonteam].QueryRow(email)
 	err := result.Scan(
 		&pt.Email,

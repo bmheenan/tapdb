@@ -6,34 +6,24 @@ import (
 
 const keyClearDomainPT = "cleardomainpersonteam"
 const qryClearDomainPT = `
-DELETE FROM
-	personteams
-  WHERE
-	domain = ?;`
+DELETE FROM personteams
+  WHERE     domain = ?;`
 const keyClearDomainPTPC = "cleardomainpersonteamparentchild"
 const qryClearDomainPTPC = `
-DELETE FROM
-	personteams_parent_child
-  WHERE
-	domain = ?;`
+DELETE FROM personteams_parent_child
+  WHERE     domain = ?;`
 const keyClearDomainThreads = "cleardomainthreads"
 const qryClearDomainThreads = `
-DELETE FROM
-	threads
-  WHERE
-	domain = ?;`
+DELETE FROM threads
+  WHERE     domain = ?;`
 const keyClearDomainThreadsPT = "cleardomainthreadsparentchild"
 const qryClearDomainThreadsPT = `
-DELETE FROM
-	threads_parent_child
-  WHERE
-	domain = ?;`
+DELETE FROM threads_parent_child
+  WHERE     domain = ?;`
 const keyClearDomainStakeholders = "cleardomainstakeholders"
 const qryClearDomainStakeholders = `
-DELETE FROM
-	threads_stakeholders
-  WHERE
-	domain = ?;`
+DELETE FROM threads_stakeholders
+  WHERE     domain = ?;`
 
 func (db *mySQLDB) initClearDomain() error {
 	var err error

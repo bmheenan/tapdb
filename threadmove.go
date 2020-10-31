@@ -1,14 +1,12 @@
 package tapdb
 
 import (
-	"database/sql"
 	"errors"
-	"fmt"
-	"math"
 
 	"github.com/bmheenan/tapstruct"
 )
 
+/*
 const keyGetPrevThreadOrd = "getprevthreadord"
 const qryGetPrevThreadOrd = `
 SELECT  MAX(ord) AS ord
@@ -40,8 +38,9 @@ SELECT  MIN(ord) AS ord
 const keyUpdateOrder = "updateorder"
 const qryUpdateOrder = `
 UPDATE  threads
-  SET   ord = ?
+  SET   percentile = ? #wrong
   WHERE id = ?;`
+*/
 
 // BeforeAfter specifies if we should put the given thread before or after the reference thread
 type BeforeAfter string
@@ -54,7 +53,7 @@ const (
 )
 
 func (db *mySQLDB) initThreadMove() error {
-	var err error
+	/*var err error
 	db.stmts[keyUpdateOrder], err = db.conn.Prepare(qryUpdateOrder)
 	if err != nil {
 		return fmt.Errorf("Could not init %v: %v", keyUpdateOrder, err)
@@ -75,7 +74,8 @@ func (db *mySQLDB) initThreadMove() error {
 	if err != nil {
 		return fmt.Errorf("Could not init %v: %v", keyGetNextThreadPct, err)
 	}
-	return nil
+	return nil*/
+	return errors.New("Not implemented")
 }
 
 // MoveThread changes the order and the percentile of the given (first) thread to be either before or after the
@@ -87,7 +87,7 @@ func (db *mySQLDB) MoveThread(thread *tapstruct.Threadrow, dir BeforeAfter, ref 
 	// the beginning of the iteration), it could still be improved by checking if it's moving enough to actually place
 	// `thread` before/after `ref`, and if not, trying the next place until it succeeds or gets to the beginning/end
 	// of the iteration
-	if thread.Iteration != ref.Iteration || thread.Iteration == "" {
+	/*if thread.Iteration != ref.Iteration || thread.Iteration == "" {
 		return errors.New("Threads must be in the same (non-empty) iteration")
 	}
 	if thread.Owner.Email == "" || ref.Owner.Email == "" {
@@ -141,11 +141,12 @@ func (db *mySQLDB) MoveThread(thread *tapstruct.Threadrow, dir BeforeAfter, ref 
 	}
 	// Move thread in between ref's order and the adjacent thread's order we just fetched from the db
 	newOrd := db.min(o, ref.Order) + (db.abs(o-ref.Order) / 2)
-	return db.updateThreadOrder(thread.ID, newOrd, thread.Owner.Email, thread.Iteration)
+	return db.updateThreadOrder(thread.ID, newOrd, thread.Owner.Email, thread.Iteration)*/
+	return errors.New("Not implemented")
 }
 
 func (db *mySQLDB) updateThreadOrder(id int64, ord int, owner string, iter string) error {
-	_, errUpd := db.stmts[keyUpdateOrder].Exec(ord, id)
+	/*_, errUpd := db.stmts[keyUpdateOrder].Exec(ord, id)
 	if errUpd != nil {
 		return fmt.Errorf("Could not update order in db: %v", errUpd)
 	}
@@ -153,5 +154,6 @@ func (db *mySQLDB) updateThreadOrder(id int64, ord int, owner string, iter strin
 	if errCal != nil {
 		return fmt.Errorf("Could not calibrate ord and pct: %v", errCal)
 	}
-	return nil
+	return nil*/
+	return errors.New("Not implemented")
 }

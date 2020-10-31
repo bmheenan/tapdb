@@ -20,9 +20,10 @@ type DBInterface interface {
 	GetPersonteam(string, int) (*tapstruct.Personteam, error)
 	ClearDomain(string) error
 	IterationsByPersonteam(string) ([]string, error)
-	NewThread(*tapstruct.Threaddetail, []*tapstruct.Threadrow, []*tapstruct.Threadrow) (int64, error)
-	GetThreadrowsByPersonteamPlan(string, []string) ([]tapstruct.Threadrow, error)
-	NewStakeholder(int64, *tapstruct.Personteam) error
+
+	ThreadNew(string, string, *tapstruct.Personteam, int, []int64, []int64) (int64, error)
+	ThreadGetRowsPTPlan(string, []string) ([]tapstruct.Threadrow, error)
+	StakeholderNew(int64, string, *tapstruct.Personteam) error
 	MoveThread(*tapstruct.Threadrow, BeforeAfter, *tapstruct.Threadrow) error
 }
 
@@ -68,11 +69,12 @@ func InitDB() (DBInterface, error) {
 		db.initNewPersonteam,
 		db.initClearDomain,
 		db.initIterationsByPersonteam,
-		db.initGetThreadrowsByPersonteamPlan,
-		db.initNewThread,
-		db.initNewStakeholder,
-		db.initThreadMove,
+		//db.initThreadGetRowsPTPlan,
+		db.initThreadNew,
+		db.initStakeholderNew,
+		//db.initThreadMove,
 		db.initCalibrateOrdPct,
+		db.initThreadLink,
 	}
 	for _, f := range initFuncs {
 		initErr := f()
