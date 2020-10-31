@@ -2,25 +2,17 @@ package tapdb
 
 import "fmt"
 
-func (db *mySQLDB) makeTables() error {
-	_, errCreateDB := db.conn.Exec(`
-		CREATE DATABASE IF NOT EXISTS tapestry
-		DEFAULT CHARACTER SET = 'utf8'
-		DEFAULT COLLATE 'utf8_general_ci';`)
-	if errCreateDB != nil {
-		return fmt.Errorf("Could not create database: %v", errCreateDB)
-	}
-
+// Make the db tables if they don't already exist
+func (db *mysqlDB) makeTables() error {
 	_, errCreatePersonteam := db.conn.Exec(`
 		CREATE TABLE IF NOT EXISTS personteams (
-			email           VARCHAR(255) NOT NULL,
-			domain          VARCHAR(255) NOT NULL,
-			name            VARCHAR(255) NOT NULL,
-			abbrev          VARCHAR(63)  NOT NULL,
-			colorf          VARCHAR(63)  NOT NULL,
-			colorb          VARCHAR(63)  NOT NULL,
-			haschildren     BOOLEAN      NOT NULL,
-			iterationTiming VARCHAR(63)  NOT NULL,
+			email      VARCHAR(255) NOT NULL,
+			domain     VARCHAR(255) NOT NULL,
+			name       VARCHAR(255) NOT NULL,
+			abbrev     VARCHAR(63)  NOT NULL,
+			colorf     VARCHAR(63)  NOT NULL,
+			colorb     VARCHAR(63)  NOT NULL,
+			itertiming VARCHAR(63)  NOT NULL,
 			PRIMARY KEY (email),
 			INDEX (domain)
 		);`)

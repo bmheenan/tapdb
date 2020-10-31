@@ -4,72 +4,47 @@ import (
 	"fmt"
 )
 
-const keyClearDomainPT = "cleardomainpersonteam"
-const qryClearDomainPT = `
-DELETE FROM personteams
-  WHERE     domain = ?;`
-const keyClearDomainPTPC = "cleardomainpersonteamparentchild"
-const qryClearDomainPTPC = `
-DELETE FROM personteams_parent_child
-  WHERE     domain = ?;`
-const keyClearDomainThreads = "cleardomainthreads"
-const qryClearDomainThreads = `
-DELETE FROM threads
-  WHERE     domain = ?;`
-const keyClearDomainThreadsPT = "cleardomainthreadsparentchild"
-const qryClearDomainThreadsPT = `
-DELETE FROM threads_parent_child
-  WHERE     domain = ?;`
-const keyClearDomainStakeholders = "cleardomainstakeholders"
-const qryClearDomainStakeholders = `
-DELETE FROM threads_stakeholders
-  WHERE     domain = ?;`
-
-func (db *mySQLDB) initClearDomain() error {
-	var err error
-	db.stmts[keyClearDomainPT], err = db.conn.Prepare(qryClearDomainPT)
-	if err != nil {
-		return fmt.Errorf("Could not init %v: %v", keyClearDomainPT, err)
-	}
-	db.stmts[keyClearDomainPTPC], err = db.conn.Prepare(qryClearDomainPTPC)
-	if err != nil {
-		return fmt.Errorf("Could not init %v: %v", keyClearDomainPTPC, err)
-	}
-	db.stmts[keyClearDomainThreads], err = db.conn.Prepare(qryClearDomainThreads)
-	if err != nil {
-		return fmt.Errorf("Could not init %v: %v", keyClearDomainThreads, err)
-	}
-	db.stmts[keyClearDomainThreadsPT], err = db.conn.Prepare(qryClearDomainThreadsPT)
-	if err != nil {
-		return fmt.Errorf("Could not init %v: %v", keyClearDomainThreadsPT, err)
-	}
-	db.stmts[keyClearDomainStakeholders], err = db.conn.Prepare(qryClearDomainStakeholders)
-	if err != nil {
-		return fmt.Errorf("Could not init %v: %v", keyClearDomainStakeholders, err)
-	}
-	return nil
+// ClearPersonteams deletes all personteams of the matching domain
+func (db *mysqlDB) ClearPersonteams(domain string) error {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	DELETE FROM personteams
+	WHERE       domain = '%v'
+	;`, domain))
+	return err
 }
 
-func (db *mySQLDB) ClearDomain(dom string) error {
-	_, errThreadStk := db.stmts[keyClearDomainStakeholders].Exec(dom)
-	if errThreadStk != nil {
-		return fmt.Errorf("Could not delete stakeholders matching domain %v: %v", dom, errThreadStk)
-	}
-	_, errThreadPC := db.stmts[keyClearDomainThreadsPT].Exec(dom)
-	if errThreadPC != nil {
-		return fmt.Errorf("Could not delete thread parent/child relationships matching domain %v: %v", dom, errThreadPC)
-	}
-	_, errThreads := db.stmts[keyClearDomainThreads].Exec(dom)
-	if errThreads != nil {
-		return fmt.Errorf("Could not delete threads matching domain %v: %v", dom, errThreads)
-	}
-	_, errPTPC := db.stmts[keyClearDomainPTPC].Exec(dom)
-	if errPTPC != nil {
-		return fmt.Errorf("Could not delete personteam parent/child relationships matching domain %v: %v", dom, errPTPC)
-	}
-	_, errPT := db.stmts[keyClearDomainPT].Exec(dom)
-	if errPT != nil {
-		return fmt.Errorf("Could not delete personteams matching domain %v: %v", dom, errPT)
-	}
-	return nil
+// ClearPersonteamsPC deletes all personteams_parent_child relationships for the matching domain
+func (db *mysqlDB) ClearPersonteamsPC(domain string) error {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	DELETE FROM personteams_parent_child
+	WHERE       domain = '%v'
+	;`, domain))
+	return err
+}
+
+// ClearThreads deletes all threads for the matching domain
+func (db *mysqlDB) ClearThreads(domain string) error {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	DELETE FROM threads
+	WHERE       domain = '%v'
+	;`, domain))
+	return err
+}
+
+// ClearThreadsPC deletes all threads_parent_child relationships for the matching domain
+func (db *mysqlDB) ClearThreadsPC(domain string) error {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	DELETE FROM threads_parent_child
+	WHERE       domain = '%v'
+	;`, domain))
+	return err
+}
+
+// ClearStakeholders deletes all threads_stakeholders relationships for the matching domain
+func (db *mysqlDB) ClearStakeholders(domain string) error {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	DELETE FROM threads_stakeholders
+	WHERE       domain = '%v'
+	;`, domain))
+	return err
 }
