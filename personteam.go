@@ -53,11 +53,16 @@ func (db *mysqlDB) GetPersonteam(email string) (*taps.Personteam, error) {
 	}
 	defer qr.Close()
 	pt := &taps.Personteam{}
+	found := false
 	for qr.Next() {
+		found = true
 		errScn := qr.Scan(&pt.Email, &pt.Domain, &pt.Name, &pt.Abbrev, &pt.ColorF, &pt.ColorB, &pt.IterTiming)
 		if errScn != nil {
 			return &taps.Personteam{}, fmt.Errorf("Could not scan personteam: %v", errScn)
 		}
+	}
+	if !found {
+		return pt, fmt.Errorf("No personteam by that email: %w", ErrNotFound)
 	}
 	return pt, nil
 }
@@ -106,7 +111,7 @@ func (db *mysqlDB) GetPersonteamDescendants(email string) (map[string](*taps.Per
 	defer qr.Close()
 	for qr.Next() {
 		pt := taps.Personteam{}
-		errScn := qr.Scan(pt.Email, pt.Domain, pt.Name, pt.Abbrev, pt.ColorF, pt.ColorB, pt.IterTiming)
+		errScn := qr.Scan(&pt.Email, &pt.Domain, &pt.Name, &pt.Abbrev, &pt.ColorF, &pt.ColorB, &pt.IterTiming)
 		if errScn != nil {
 			return map[string](*taps.Personteam){}, fmt.Errorf("Could not scan personteam: %v", errScn)
 		}
