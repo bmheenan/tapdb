@@ -14,7 +14,7 @@ var _ mysql.Config // keep the linter from cleaning up the import. sql.Open need
 
 // Init initialized the database connection, creates the database and tables if needed, then returns an interface
 // with all functions that can be executed against the database
-// The username, password, and instance name of the database must be provided
+// The username and password of the database must be provided
 func Init(user, pass string) (DBInterface, error) {
 	var (
 		unixSocket,

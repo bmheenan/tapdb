@@ -19,7 +19,7 @@ func (db *mysqlDB) NewPersonteam(email, domain, name, abbrev, colorf, colorb str
 	return err
 }
 
-// NewPersonteam inserts a new personteam into the db with the given data
+// NewPersonteamPC makes `child` a child of `parent`. Both must already exist
 func (db *mysqlDB) NewPersonteamPC(parent, child, domain string) error {
 	if parent == "" || child == "" || domain == "" {
 		return fmt.Errorf("No args may be blank: %w", ErrBadArgs)
