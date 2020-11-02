@@ -99,11 +99,10 @@ func (db *mysqlDB) GetThreadDescendants(id int64) (map[int64](*taps.Threadrel), 
 	  ,    t.costdirect
 	  ,    t.owner
 	  ,    t.iteration
-	  ,    ord
 	  ,    t.percentile
 	FROM   descendants d
 	  JOIN threads t
-	  ON   p.id = d.child
+	  ON   t.id = d.child
 	;`, id))
 	if errQry != nil {
 		return map[int64](*taps.Threadrel){}, fmt.Errorf("Could not query descendants: %v", errQry)
@@ -114,7 +113,7 @@ func (db *mysqlDB) GetThreadDescendants(id int64) (map[int64](*taps.Threadrel), 
 	}
 	for qr.Next() {
 		th := &taps.Threadrel{}
-		qr.Scan(&th.ID, &th.State, &th.CostDirect, &th.Owner, &th.Iteration, &th.Order, &th.Percentile)
+		qr.Scan(&th.ID, &th.State, &th.CostDirect, &th.Owner, &th.Iteration, &th.Percentile)
 		ths[th.ID] = th
 	}
 	return ths, nil
