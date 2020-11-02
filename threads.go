@@ -119,6 +119,50 @@ func (db *mysqlDB) GetThreadDescendants(id int64) (map[int64](*taps.Threadrel), 
 	return ths, nil
 }
 
+func (db *mysqlDB) GetThreadAncestors(id int64) (map[int64](*taps.Threadrel), error) {
+	thRoot, errRoot := db.GetThreadrel(id)
+	if errRoot != nil {
+		return map[int64](*taps.Threadrel){}, fmt.Errorf("Could not get the root threadrel: %w", errRoot)
+	}
+	qr, errQry := db.conn.Query(fmt.Sprintf(`
+	WITH   RECURSIVE ancestors (child, parent) AS
+	       (
+	       SELECT child
+	         ,    parent
+	       FROM   threads_parent_child
+	       WHERE  child = %v
+	       UNION ALL
+	       SELECT t.child
+	         ,    t.parent
+	       FROM   threads_parent_child t
+	       JOIN   ancestors a
+	         ON   t.child = a.parent
+	       )
+	SELECT t.id
+	  ,    t.state
+	  ,    t.costdirect
+	  ,    t.owner
+	  ,    t.iteration
+	  ,    t.percentile
+	FROM   ancestors a
+	  JOIN threads t
+	  ON   t.id = a.parent
+	;`, id))
+	if errQry != nil {
+		return map[int64](*taps.Threadrel){}, fmt.Errorf("Could not query ancestors: %v", errQry)
+	}
+	defer qr.Close()
+	ths := map[int64](*taps.Threadrel){
+		id: thRoot,
+	}
+	for qr.Next() {
+		th := &taps.Threadrel{}
+		qr.Scan(&th.ID, &th.State, &th.CostDirect, &th.Owner, &th.Iteration, &th.Percentile)
+		ths[th.ID] = th
+	}
+	return ths, nil
+}
+
 /*
 	WITH        RECURSIVE descendants (child, parent) AS
 	            (

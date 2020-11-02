@@ -24,6 +24,7 @@ type DBInterface interface {
 	LinkThreads(parent, child int64, ord int, domain string) error
 	GetThreadrel(id int64) (*taps.Threadrel, error)
 	GetThreadDescendants(id int64) (map[int64](*taps.Threadrel), error)
+	GetThreadAncestors(id int64) (map[int64](*taps.Threadrel), error)
 
 	NewStakeholder(thread int64, stakeholder, domain string, ord int, topLvl bool, cost int) error
 }

@@ -88,6 +88,67 @@ func TestThreadLinkingAndDescendants(t *testing.T) {
 	}
 }
 
+func TestThreadLinkingAndAncestors(t *testing.T) {
+	db, pts, errSetup := setupWithPersonteams()
+	if errSetup != nil {
+		t.Errorf("%v", errSetup)
+		return
+	}
+	ths := []struct {
+		name string
+		cost int
+		id   int64
+	}{
+		{
+			name: "A",
+			cost: 5,
+		},
+		{
+			name: "B",
+			cost: 10,
+		},
+		{
+			name: "C",
+			cost: 1,
+		},
+		{
+			name: "D",
+			cost: 2,
+		},
+	}
+	for i := 0; i < len(ths); i++ {
+		var errNew error
+		ths[i].id, errNew = db.NewThread(ths[i].name, "example.com", pts[0], "2020 Oct", "not started", 1, ths[i].cost)
+		if errNew != nil {
+			t.Errorf("Could not insert thread %v: %v", ths[i], errNew)
+			return
+		}
+		if i > 0 {
+			errLnk := db.LinkThreads(ths[i-1].id, ths[i].id, 0, "example.com")
+			if errLnk != nil {
+				t.Errorf("Could not link threads: %v", errLnk)
+				return
+			}
+		}
+	}
+	anc, errAnc := db.GetThreadAncestors(ths[1].id)
+	if errAnc != nil {
+		t.Errorf("Could not get thread ancestors: %v", errAnc)
+		return
+	}
+	if len(anc) != 2 {
+		t.Errorf("Expected 2 results; got %v", len(anc))
+	}
+	totCost := 0
+	for _, d := range anc {
+		totCost += d.CostDirect
+	}
+	if totCost != 15 {
+		t.Errorf("Expected total cost 15; got %v", totCost)
+		return
+	}
+}
+
 func setupWithPersonteams() (DBInterface, []string, error) {
 	db, errSetup := setupForTest()
 	if errSetup != nil {
