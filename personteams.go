@@ -20,7 +20,7 @@ func (db *mysqlDB) NewPersonteam(email, domain, name, abbrev, colorf, colorb str
 }
 
 // NewPersonteamPC makes `child` a child of `parent`. Both must already exist
-func (db *mysqlDB) NewPersonteamPC(parent, child, domain string) error {
+func (db *mysqlDB) LinkPersonteams(parent, child, domain string) error {
 	if parent == "" || child == "" || domain == "" {
 		return fmt.Errorf("No args may be blank: %w", ErrBadArgs)
 	}

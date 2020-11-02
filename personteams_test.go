@@ -88,7 +88,7 @@ func TestGetPersonteamDescendants(t *testing.T) {
 			c: "ba@example.com",
 		},
 	} {
-		errPC := db.NewPersonteamPC(l.p, l.c, "example.com")
+		errPC := db.LinkPersonteams(l.p, l.c, "example.com")
 		if errPC != nil {
 			t.Errorf("Error trying to link personteams %v and %v: %v", l.p, l.c, errPC)
 			return
