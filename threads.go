@@ -27,15 +27,15 @@ func (db *mysqlDB) NewThread(name, domain, owner, iteration, state string, perce
 	return id, nil
 }
 
-func (db *mysqlDB) LinkThreads(parent, child int64, ord int, domain string) error {
-	if ord < 0 || domain == "" {
-		return fmt.Errorf("Domain must be non-blank; order must be >= 0: %w", ErrBadArgs)
+func (db *mysqlDB) LinkThreads(parent, child int64, iter string, ord int, domain string) error {
+	if ord < 0 || domain == "" || iter == "" {
+		return fmt.Errorf("Domain and iteration must be non-blank; order must be >= 0: %w", ErrBadArgs)
 	}
 	_, err := db.conn.Exec(fmt.Sprintf(`
 	INSERT INTO threads_parent_child
-	            (parent, child, domain, ord)
-	VALUES      (    %v,    %v,   '%v',  %v)
-	;`, parent, child, domain, ord))
+	            (parent, child, domain, iteration, ord)
+	VALUES      (    %v,    %v,   '%v',      '%v',  %v)
+	;`, parent, child, domain, iter, ord))
 	return err
 }
 
@@ -162,6 +162,30 @@ func (db *mysqlDB) GetThreadAncestors(id int64) (map[int64](*taps.Threadrel), er
 	}
 	return ths, nil
 }
+
+func (db *mysqlDB) GetThreadOrderBefore(parent int64, iter string, order int) (int, error) {
+	qr, errQry := db.conn.Query(fmt.Sprintf(`
+	SELECT MAX(ord) AS ord
+	FROM   threads_parent_child
+	WHERE  parent = %v
+	  AND  ord < %v
+	  AND  iteration = '%v'
+	;`, parent, order, iter))
+	if errQry != nil {
+		return 0, fmt.Errorf("Could not query for previous thread order: %v", errQry)
+	}
+	defer qr.Close()
+	max := 0
+	for qr.Next() {
+		errScn := qr.Scan(&max)
+		if errScn != nil {
+			return 0, fmt.Errorf("Could not scan max value: %v", errScn)
+		}
+	}
+	return max + ((order - max) / 2), nil
+}
+
+//func (db *mysqlDB) GetLowestAncestors()
 
 /*
 	WITH        RECURSIVE descendants (child, parent) AS

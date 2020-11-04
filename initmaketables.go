@@ -4,7 +4,7 @@ import "fmt"
 
 // Make the db tables if they don't already exist
 func (db *mysqlDB) makeTables() error {
-	_, errCreatePersonteam := db.conn.Exec(`
+	_, errPT := db.conn.Exec(`
 		CREATE TABLE IF NOT EXISTS personteams (
 			email      VARCHAR(255) NOT NULL,
 			domain     VARCHAR(255) NOT NULL,
@@ -16,11 +16,11 @@ func (db *mysqlDB) makeTables() error {
 			PRIMARY KEY (email),
 			INDEX (domain)
 		);`)
-	if errCreatePersonteam != nil {
-		return fmt.Errorf("Could not create personteams table: %v", errCreatePersonteam)
+	if errPT != nil {
+		return fmt.Errorf("Could not create personteams table: %v", errPT)
 	}
 
-	_, errCreatePersonteamPC := db.conn.Exec(`
+	_, errPTPC := db.conn.Exec(`
 		CREATE TABLE IF NOT EXISTS personteams_parent_child (
 			parent VARCHAR(255) NOT NULL,
 			child  VARCHAR(255) NOT NULL,
@@ -32,11 +32,11 @@ func (db *mysqlDB) makeTables() error {
 			INDEX (child),
 			INDEX (domain)
 		);`)
-	if errCreatePersonteamPC != nil {
-		return fmt.Errorf("Could not create personteams_parent_child table: %v", errCreatePersonteamPC)
+	if errPTPC != nil {
+		return fmt.Errorf("Could not create personteams_parent_child table: %v", errPTPC)
 	}
 
-	_, errCreateThreads := db.conn.Exec(`
+	_, errTh := db.conn.Exec(`
 		CREATE TABLE IF NOT EXISTS threads (
 			id          INT              NOT NULL AUTO_INCREMENT,
 			name        VARCHAR(255)     NOT NULL,
@@ -54,16 +54,17 @@ func (db *mysqlDB) makeTables() error {
 			INDEX (iteration),
 			INDEX (state)
 		);`)
-	if errCreateThreads != nil {
-		return fmt.Errorf("Could not create threads table: %v", errCreateThreads)
+	if errTh != nil {
+		return fmt.Errorf("Could not create threads table: %v", errTh)
 	}
 
-	_, errThreadsPC := db.conn.Exec(`
+	_, errThPC := db.conn.Exec(`
 		CREATE TABLE IF NOT EXISTS threads_parent_child (
-			parent INT          NOT NULL,
-			child  INT          NOT NULL,
-			domain VARCHAR(255) NOT NULL,
-			ord    INT          NOT NULL,
+			parent    INT          NOT NULL,
+			child     INT          NOT NULL,
+			domain    VARCHAR(255) NOT NULL,
+			iteration VARCHAR(255) NOT NULL,
+			ord       INT          NOT NULL,
 			PRIMARY KEY (parent, child),
 			FOREIGN KEY (parent) REFERENCES threads(id),
 			FOREIGN KEY (child) REFERENCES threads(id),
@@ -71,15 +72,16 @@ func (db *mysqlDB) makeTables() error {
 			INDEX (child),
 			INDEX (domain)
 		);`)
-	if errThreadsPC != nil {
-		return fmt.Errorf("Could not create threads parent/child table: %v", errThreadsPC)
+	if errThPC != nil {
+		return fmt.Errorf("Could not create threads parent/child table: %v", errThPC)
 	}
 
-	_, errStakeholders := db.conn.Exec(`
+	_, errSk := db.conn.Exec(`
 		CREATE TABLE IF NOT EXISTS threads_stakeholders (
 			thread      INT          NOT NULL,
 			stakeholder VARCHAR(255) NOT NULL,
 			domain      VARCHAR(255) NOT NULL,
+			iteration   VARCHAR(255) NOT NULL,
 			ord         INT          NOT NULL,
 			toplevel    BOOL         NOT NULL,
 			costctx     INT          NOT NULL,
@@ -90,8 +92,27 @@ func (db *mysqlDB) makeTables() error {
 			INDEX (stakeholder),
 			INDEX (domain)
 		);`)
-	if errStakeholders != nil {
-		return fmt.Errorf("Could not create thread stakeholders table: %v", errStakeholders)
+	if errSk != nil {
+		return fmt.Errorf("Could not create thread stakeholders table: %v", errSk)
+	}
+
+	_, errSkPC := db.conn.Exec(`
+		CREATE TABLE IF NOT EXISTS threads_stakeholders_parent_child (
+			parent      INT          NOT NULL,
+			child       INT          NOT NULL,
+			stakeholder VARCHAR(255) NOT NULL,
+			domain      VARCHAR(255) NOT NULL,
+			PRIMARY KEY (parent, child, stakeholder),
+			FOREIGN KEY (parent) REFERENCES threads(id),
+			FOREIGN KEY (child) REFERENCES threads(id),
+			FOREIGN KEY (stakeholder) REFERENCES personteams(email),
+			INDEX (parent),
+			INDEX (child),
+			INDEX (stakeholder),
+			INDEX (domain)
+		);`)
+	if errSkPC != nil {
+		return fmt.Errorf("Could not create thread stakeholders parent child table: %v", errSkPC)
 	}
 	return nil
 }

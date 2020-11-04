@@ -21,12 +21,16 @@ type DBInterface interface {
 	GetPersonteamDescendants(email string) (map[string](*taps.Personteam), error)
 
 	NewThread(name, domain, owner, iteration, state string, percentile float64, cost int) (int64, error)
-	LinkThreads(parent, child int64, ord int, domain string) error
+	LinkThreads(parent, child int64, iter string, ord int, domain string) error
 	GetThreadrel(id int64) (*taps.Threadrel, error)
 	GetThreadDescendants(id int64) (map[int64](*taps.Threadrel), error)
 	GetThreadAncestors(id int64) (map[int64](*taps.Threadrel), error)
+	GetThreadOrderBefore(parent int64, iter string, order int) (int, error)
 
-	NewStakeholder(thread int64, stakeholder, domain string, ord int, topLvl bool, cost int) error
+	NewStakeholder(thread int64, stakeholder, domain, iter string, ord int, topLvl bool, cost int) error
+	GetStakeholderAncestors(thread int64) (map[string]*taps.Personteam, error)
+	GetStakeholderDescendants(thread int64) (map[string]*taps.Personteam, error)
+	GetStakeholderOrderBefore(stakeholder, iter string, order int) (int, error)
 }
 
 // ErrNotFound indicates that no matching record was found when querying
