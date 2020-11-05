@@ -63,7 +63,7 @@ func TestThreadLinkingAndDescendants(t *testing.T) {
 			return
 		}
 		if i > 0 {
-			errLnk := db.LinkThreads(ths[i-1].id, ths[i].id, 0, "example.com")
+			errLnk := db.LinkThreads(ths[i-1].id, ths[i].id, "2020 Oct", 0, "example.com")
 			if errLnk != nil {
 				t.Errorf("Could not link threads: %v", errLnk)
 				return
@@ -124,7 +124,7 @@ func TestThreadLinkingAndAncestors(t *testing.T) {
 			return
 		}
 		if i > 0 {
-			errLnk := db.LinkThreads(ths[i-1].id, ths[i].id, 0, "example.com")
+			errLnk := db.LinkThreads(ths[i-1].id, ths[i].id, "2020 Oct", 0, "example.com")
 			if errLnk != nil {
 				t.Errorf("Could not link threads: %v", errLnk)
 				return
