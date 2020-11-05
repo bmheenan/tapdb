@@ -22,9 +22,9 @@ type DBInterface interface {
 
 	NewThread(name, domain, owner, iteration, state string, percentile float64, cost int) (int64, error)
 	LinkThreads(parent, child int64, iter string, ord int, domain string) error
-	GetThreadrel(id int64) (*taps.Threadrel, error)
-	GetThreadDescendants(id int64) (map[int64](*taps.Threadrel), error)
-	GetThreadAncestors(id int64) (map[int64](*taps.Threadrel), error)
+	GetThreadrel(id int64, stakeholder string) (*taps.Threadrel, error)
+	GetThreadDescendants(id int64, stakeholder string) (map[int64](*taps.Threadrel), error)
+	GetThreadAncestors(id int64, stakeholder string) (map[int64](*taps.Threadrel), error)
 	GetThreadOrderBefore(parent int64, iter string, order int) (int, error)
 
 	NewStakeholder(thread int64, stakeholder, domain, iter string, ord int, topLvl bool, cost int) error

@@ -40,17 +40,34 @@ func (db *mysqlDB) LinkThreads(parent, child int64, iter string, ord int, domain
 }
 
 // GetThreadrel returns a Threadrel for the matching thread `id`. `StakeholderMatch` and `Order` will not be filled
-func (db *mysqlDB) GetThreadrel(id int64) (*taps.Threadrel, error) {
+func (db *mysqlDB) GetThreadrel(id int64, stakeholder string) (*taps.Threadrel, error) {
 	qr, errQry := db.conn.Query(fmt.Sprintf(`
-	SELECT id
-	  ,    state
-	  ,    costdirect
-	  ,    owner
-	  ,    iteration
-	  ,    percentile
-	FROM   threads
-	WHERE  id = %v
-	;`, id))
+	SELECT      t.id
+	  ,         t.state
+	  ,         t.costdirect
+	  ,         t.owner
+	  ,         t.iteration
+	  ,         t.percentile
+	  ,         CASE WHEN s.stakeholder = '%v'
+					 THEN true
+					 ELSE false
+					 END AS stakeholdermatch
+	  ,         CASE WHEN s.ord IS NULL
+					 THEN 0
+					 ELSE s.ord
+					 END AS ord
+	FROM        threads t
+	  LEFT JOIN (
+				SELECT thread
+				  ,    stakeholder
+				  ,    ord
+				FROM   threads_stakeholders
+				WHERE  stakeholder = '%v'
+				  AND  thread = %v
+				) AS s
+	  ON        t.id = s.thread
+	WHERE       id = %v
+	;`, stakeholder, stakeholder, id, id))
 	if errQry != nil {
 		return &taps.Threadrel{}, fmt.Errorf("Could not query for thread: %v", errQry)
 	}
@@ -64,6 +81,8 @@ func (db *mysqlDB) GetThreadrel(id int64) (*taps.Threadrel, error) {
 			&th.Owner,
 			&th.Iteration,
 			&th.Percentile,
+			&th.StakeholderMatch,
+			&th.Order,
 		)
 		if errScn != nil {
 			return &taps.Threadrel{}, fmt.Errorf("Could not scan thread: %v", errScn)
@@ -75,35 +94,53 @@ func (db *mysqlDB) GetThreadrel(id int64) (*taps.Threadrel, error) {
 
 // GetThreadDescendants returns a threadrel map containing all threads that are descendands of the provided `id`
 // (including itself). `StakeholderMatch` and `Order` will not be filled in
-func (db *mysqlDB) GetThreadDescendants(id int64) (map[int64](*taps.Threadrel), error) {
-	thTop, errTop := db.GetThreadrel(id)
+func (db *mysqlDB) GetThreadDescendants(id int64, stakeholder string) (map[int64](*taps.Threadrel), error) {
+	thTop, errTop := db.GetThreadrel(id, stakeholder)
 	if errTop != nil {
 		return map[int64](*taps.Threadrel){}, fmt.Errorf("Could not get the root threadrel: %w", errTop)
 	}
 	qr, errQry := db.conn.Query(fmt.Sprintf(`
-	WITH   RECURSIVE descendants (child, parent) AS
-	       (
-	       SELECT child
-	         ,    parent
-	       FROM   threads_parent_child
-	       WHERE  parent = %v
-	       UNION ALL
-	       SELECT t.child
-	         ,    t.parent
-	       FROM   threads_parent_child t
-	       JOIN   descendants d
-	         ON   t.parent = d.child
-	       )
-	SELECT t.id
-	  ,    t.state
-	  ,    t.costdirect
-	  ,    t.owner
-	  ,    t.iteration
-	  ,    t.percentile
-	FROM   descendants d
-	  JOIN threads t
-	  ON   t.id = d.child
-	;`, id))
+	WITH        RECURSIVE descendants (child, parent) AS
+	            (
+	            SELECT child
+	              ,    parent
+	            FROM   threads_parent_child
+	            WHERE  parent = %v
+	            UNION ALL
+	            SELECT t.child
+	              ,    t.parent
+	            FROM   threads_parent_child t
+	            JOIN   descendants d
+	              ON   t.parent = d.child
+		        )
+	  ,         filteredstakeholders (thread, stakeholder, ord) AS
+	            (
+		        SELECT thread
+			      ,    stakeholder
+			      ,    ord
+		        FROM   threads_stakeholders
+		        WHERE  stakeholder = '%v'
+		        )
+	SELECT      t.id
+	  ,         t.state
+	  ,         t.costdirect
+	  ,         t.owner
+	  ,         t.iteration
+	  ,         t.percentile
+	  ,         CASE WHEN s.stakeholder = '%v'
+					 THEN true
+					 ELSE false
+					 END AS stakeholdermatch
+	  ,         CASE WHEN s.ord IS NULL
+					 THEN 0
+					 ELSE s.ord
+					 END AS ord
+	FROM        descendants d
+	  JOIN      threads t
+	  ON        t.id = d.child
+	  LEFT JOIN filteredstakeholders s
+	  ON        t.id = s.thread
+	;`, id, stakeholder, stakeholder))
 	if errQry != nil {
 		return map[int64](*taps.Threadrel){}, fmt.Errorf("Could not query descendants: %v", errQry)
 	}
@@ -113,41 +150,68 @@ func (db *mysqlDB) GetThreadDescendants(id int64) (map[int64](*taps.Threadrel), 
 	}
 	for qr.Next() {
 		th := &taps.Threadrel{}
-		qr.Scan(&th.ID, &th.State, &th.CostDirect, &th.Owner, &th.Iteration, &th.Percentile)
+		qr.Scan(
+			&th.ID,
+			&th.State,
+			&th.CostDirect,
+			&th.Owner,
+			&th.Iteration,
+			&th.Percentile,
+			&th.StakeholderMatch,
+			&th.Order,
+		)
 		ths[th.ID] = th
 	}
 	return ths, nil
 }
 
-func (db *mysqlDB) GetThreadAncestors(id int64) (map[int64](*taps.Threadrel), error) {
-	thRoot, errRoot := db.GetThreadrel(id)
+func (db *mysqlDB) GetThreadAncestors(id int64, stakeholder string) (map[int64](*taps.Threadrel), error) {
+	thRoot, errRoot := db.GetThreadrel(id, stakeholder)
 	if errRoot != nil {
 		return map[int64](*taps.Threadrel){}, fmt.Errorf("Could not get the root threadrel: %w", errRoot)
 	}
 	qr, errQry := db.conn.Query(fmt.Sprintf(`
-	WITH   RECURSIVE ancestors (child, parent) AS
-	       (
-	       SELECT child
-	         ,    parent
-	       FROM   threads_parent_child
-	       WHERE  child = %v
-	       UNION ALL
-	       SELECT t.child
-	         ,    t.parent
-	       FROM   threads_parent_child t
-	       JOIN   ancestors a
-	         ON   t.child = a.parent
-	       )
-	SELECT t.id
-	  ,    t.state
-	  ,    t.costdirect
-	  ,    t.owner
-	  ,    t.iteration
-	  ,    t.percentile
-	FROM   ancestors a
-	  JOIN threads t
-	  ON   t.id = a.parent
-	;`, id))
+	WITH        RECURSIVE ancestors (child, parent) AS
+	            (
+	            SELECT child
+	              ,    parent
+	            FROM   threads_parent_child
+	            WHERE  child = %v
+	            UNION ALL
+	            SELECT t.child
+	              ,    t.parent
+	            FROM   threads_parent_child t
+	            JOIN   ancestors a
+	              ON   t.child = a.parent
+		        )
+	  ,         filteredstakeholders (thread, stakeholder, ord) AS
+	            (
+		        SELECT thread
+		          ,    stakeholder
+		          ,    ord
+		        FROM   threads_stakeholders
+		        WHERE  stakeholder = '%v'
+		        )
+	SELECT      t.id
+	  ,         t.state
+	  ,         t.costdirect
+	  ,         t.owner
+	  ,         t.iteration
+	  ,         t.percentile
+	  ,         CASE WHEN s.stakeholder = '%v'
+					 THEN true
+					 ELSE false
+					 END AS stakeholdermatch
+	  ,         CASE WHEN s.ord IS NULL
+					 THEN 0
+					 ELSE s.ord
+					 END AS ord
+	FROM        ancestors a
+	  JOIN      threads t
+	  ON        t.id = a.parent
+	  LEFT JOIN filteredstakeholders s
+	  ON        t.id = s.thread
+	;`, id, stakeholder, stakeholder))
 	if errQry != nil {
 		return map[int64](*taps.Threadrel){}, fmt.Errorf("Could not query ancestors: %v", errQry)
 	}
@@ -157,7 +221,19 @@ func (db *mysqlDB) GetThreadAncestors(id int64) (map[int64](*taps.Threadrel), er
 	}
 	for qr.Next() {
 		th := &taps.Threadrel{}
-		qr.Scan(&th.ID, &th.State, &th.CostDirect, &th.Owner, &th.Iteration, &th.Percentile)
+		errScn := qr.Scan(
+			&th.ID,
+			&th.State,
+			&th.CostDirect,
+			&th.Owner,
+			&th.Iteration,
+			&th.Percentile,
+			&th.StakeholderMatch,
+			&th.Order,
+		)
+		if errScn != nil {
+			return map[int64](*taps.Threadrel){}, fmt.Errorf("Could not scan from query results: %v", errScn)
+		}
 		ths[th.ID] = th
 	}
 	return ths, nil

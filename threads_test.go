@@ -16,12 +16,17 @@ func TestNewAndGetThread(t *testing.T) {
 		t.Errorf("Could not insert new thread: %v", errIn)
 		return
 	}
-	th, errGet := db.GetThreadrel(id)
+	errSk := db.NewStakeholder(id, pts[0], "example.com", "2020 Oct", 0, true, 10)
+	if errSk != nil {
+		t.Errorf("Could not insert owner as stakeholder: %v", errSk)
+		return
+	}
+	th, errGet := db.GetThreadrel(id, pts[0])
 	if errGet != nil {
 		t.Errorf("Could not get thread: %v", errGet)
 		return
 	}
-	if th.ID != id || th.Iteration != "2020 Oct" || th.CostDirect != 10 {
+	if th.ID != id || th.Iteration != "2020 Oct" || th.CostDirect != 10 || !th.StakeholderMatch {
 		t.Errorf("Retrieved thread didn't have the expected data. Got %v", th)
 		return
 	}
@@ -62,6 +67,11 @@ func TestThreadLinkingAndDescendants(t *testing.T) {
 			t.Errorf("Could not insert thread %v: %v", ths[i], errNew)
 			return
 		}
+		errSk := db.NewStakeholder(ths[i].id, pts[0], "example.com", "2020 Oct", 0, true, ths[i].cost)
+		if errSk != nil {
+			t.Errorf("Could not insert owner as stakeholder: %v", errSk)
+			return
+		}
 		if i > 0 {
 			errLnk := db.LinkThreads(ths[i-1].id, ths[i].id, "2020 Oct", 0, "example.com")
 			if errLnk != nil {
@@ -70,7 +80,7 @@ func TestThreadLinkingAndDescendants(t *testing.T) {
 			}
 		}
 	}
-	des, errDes := db.GetThreadDescendants(ths[1].id)
+	des, errDes := db.GetThreadDescendants(ths[1].id, pts[0])
 	if errDes != nil {
 		t.Errorf("Could not get thread descendants: %v", errDes)
 		return
@@ -85,6 +95,12 @@ func TestThreadLinkingAndDescendants(t *testing.T) {
 	if totCost != 13 {
 		t.Errorf("Expected total cost 13; got %v", totCost)
 		return
+	}
+	for _, th := range des {
+		if !th.StakeholderMatch {
+			t.Errorf("Expected StakholderMatch to be true, but it was not for %v", th.ID)
+			return
+		}
 	}
 }
 
@@ -123,6 +139,11 @@ func TestThreadLinkingAndAncestors(t *testing.T) {
 			t.Errorf("Could not insert thread %v: %v", ths[i], errNew)
 			return
 		}
+		errSk := db.NewStakeholder(ths[i].id, pts[0], "example.com", "2020 Oct", 0, true, ths[i].cost)
+		if errSk != nil {
+			t.Errorf("Could not insert owner as stakeholder: %v", errSk)
+			return
+		}
 		if i > 0 {
 			errLnk := db.LinkThreads(ths[i-1].id, ths[i].id, "2020 Oct", 0, "example.com")
 			if errLnk != nil {
@@ -131,7 +152,7 @@ func TestThreadLinkingAndAncestors(t *testing.T) {
 			}
 		}
 	}
-	anc, errAnc := db.GetThreadAncestors(ths[1].id)
+	anc, errAnc := db.GetThreadAncestors(ths[1].id, pts[0])
 	if errAnc != nil {
 		t.Errorf("Could not get thread ancestors: %v", errAnc)
 		return
@@ -146,6 +167,12 @@ func TestThreadLinkingAndAncestors(t *testing.T) {
 	if totCost != 15 {
 		t.Errorf("Expected total cost 15; got %v", totCost)
 		return
+	}
+	for _, th := range anc {
+		if !th.StakeholderMatch {
+			t.Errorf("Expected StakholderMatch to be true, but it was not for %v", th.ID)
+			return
+		}
 	}
 }
 
