@@ -124,12 +124,22 @@ func (db *mysqlDB) GetStakeholderOrderBefore(stakeholder, iter string, order int
 	return max + ((order - max) / 2), nil
 }
 
-func (db *mysqlDB) SetStakeholderCostTotal(id int64, stakeholder string, cost int) error {
+func (db *mysqlDB) SetStakeholderCostTotal(thread int64, stakeholder string, cost int) error {
 	_, err := db.conn.Exec(fmt.Sprintf(`
 	UPDATE threads_stakeholders
 	SET    costctx = %v
 	WHERE  id = %v
 	  AND  stakeholder = '%v'
-	`, cost, id, stakeholder))
+	`, cost, thread, stakeholder))
+	return err
+}
+
+func (db *mysqlDB) SetStakeholderTopThread(thread int64, stakeholder string, top bool) error {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	UPDATE threads_stakeholders
+	SET    toplevel = %v
+	WHERE  id = %v
+	  AND  stakeholder = %v
+	`, top, thread, stakeholder))
 	return err
 }

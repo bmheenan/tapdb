@@ -37,7 +37,8 @@ type DBInterface interface {
 	GetStakeholderAncestors(thread int64) (map[string]*taps.Personteam, error)
 	GetStakeholderDescendants(thread int64) (map[string]*taps.Personteam, error)
 	GetStakeholderOrderBefore(stakeholder, iter string, order int) (int, error)
-	SetStakeholderCostTotal(id int64, stakeholder string, cost int) error
+	SetStakeholderCostTotal(thread int64, stakeholder string, cost int) error
+	SetStakeholderTopThread(thread int64, stakeholder string, top bool) error
 }
 
 // ErrNotFound indicates that no matching record was found when querying
