@@ -38,7 +38,7 @@ func (db *mysqlDB) LinkThreads(parent, child int64, iter string, ord int, domain
 	return err
 }
 
-func (db *mysqlDB) LinkThreadsStakeholder(parent, child int, stakeholder, domain string) error {
+func (db *mysqlDB) LinkThreadsStakeholder(parent, child int64, stakeholder, domain string) error {
 	if domain == "" || stakeholder == "" {
 		return errors.New("Doman and stakeholder must be non-blank")
 	}
