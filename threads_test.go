@@ -176,6 +176,80 @@ func TestThreadLinkingAndAncestors(t *testing.T) {
 	}
 }
 
+func TestGetChildThreadsSkIter(t *testing.T) {
+	db, _, errSetup := setupWithPersonteams()
+	if errSetup != nil {
+		t.Errorf("%v", errSetup)
+		return
+	}
+	ths := map[string](*struct {
+		sks     []string
+		parents []string
+		cost    int
+		id      int64
+	}){
+		"A": {
+			sks:  []string{"a@example.com"},
+			cost: 5,
+		},
+		"B": {
+			sks:     []string{"a@example.com", "b@example.com"},
+			parents: []string{"A"},
+			cost:    10,
+		},
+		"C": {
+			sks:     []string{"b@example.com", "c@example.com"},
+			parents: []string{"B"},
+			cost:    1,
+		},
+		"D": {
+			sks:     []string{"a@example.com", "c@example.com"},
+			parents: []string{"B"},
+			cost:    2,
+		},
+	}
+	for n, th := range ths {
+		var errNew error
+		ths[n].id, errNew = db.NewThread(n, "example.com", ths[n].sks[0], "2020 Oct", "not started", 1, ths[n].cost)
+		if errNew != nil {
+			t.Errorf("Could not insert thread %v: %v", n, errNew)
+			return
+		}
+		for _, sk := range th.sks {
+			errSk := db.NewStakeholder(ths[n].id, sk, "example.com", "2020 Oct", 0, true, ths[n].cost)
+			if errSk != nil {
+				t.Errorf("Could not insert owner as stakeholder: %v", errSk)
+				return
+			}
+		}
+		for _, p := range th.parents {
+			errLnk := db.LinkThreads(ths[p].id, ths[n].id, "2020 Oct", 0, "example.com")
+			if errLnk != nil {
+				t.Errorf("Could not link threads: %v", errLnk)
+				return
+			}
+		}
+	}
+	res0, err0 := db.GetChildThreadsSkIter([]int64{ths["B"].id}, "a@example.com", "2020 Oct")
+	if err0 != nil {
+		t.Errorf("Could not get child threads by stakeholder and iteration: %v", err0)
+		return
+	}
+	if len(res0) != 1 {
+		t.Errorf("Expected res0 to have 1 result but got %v", len(res0))
+		return
+	}
+	res1, err1 := db.GetChildThreadsSkIter([]int64{ths["A"].id}, "c@example.com", "2020 Oct")
+	if err1 != nil {
+		t.Errorf("Could not get child threads by stakeholder and iteration: %v", err1)
+		return
+	}
+	if len(res1) != 2 {
+		t.Errorf("Expected res0 to have 2 results but got %v", len(res1))
+		return
+	}
+}
+
 func setupWithPersonteams() (DBInterface, []string, error) {
 	db, errSetup := setupForTest()
 	if errSetup != nil {

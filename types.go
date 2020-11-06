@@ -26,6 +26,8 @@ type DBInterface interface {
 	GetThreadDescendants(id int64, stakeholder string) (map[int64](*taps.Threadrel), error)
 	GetThreadAncestors(id int64, stakeholder string) (map[int64](*taps.Threadrel), error)
 	GetThreadOrderBefore(parent int64, iter string, order int) (int, error)
+	GetChildThreadsSkIter(threads []int64, stakeholder, iteration string) (map[int64](*taps.Threadrel), error)
+	GetParentThreadsSkIter(threads []int64, stakeholder, iteration string) (map[int64](*taps.Threadrel), error)
 
 	NewStakeholder(thread int64, stakeholder, domain, iter string, ord int, topLvl bool, cost int) error
 	GetStakeholderAncestors(thread int64) (map[string]*taps.Personteam, error)
