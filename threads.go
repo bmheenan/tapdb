@@ -1,6 +1,7 @@
 package tapdb
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -34,6 +35,18 @@ func (db *mysqlDB) LinkThreads(parent, child int64, iter string, ord int, domain
 	            (parent, child, domain, iteration, ord)
 	VALUES      (    %v,    %v,   '%v',      '%v',  %v)
 	;`, parent, child, domain, iter, ord))
+	return err
+}
+
+func (db *mysqlDB) LinkThreadsStakeholder(parent, child int, stakeholder, domain string) error {
+	if domain == "" || stakeholder == "" {
+		return errors.New("Doman and stakeholder must be non-blank")
+	}
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	INSERT INTO threads_stakeholders_parent_child
+				(parent, child, stakeholder, domain)
+	VALUES      (    %v,    %v,        '%v',   '%v')
+	;`, parent, child, stakeholder, domain))
 	return err
 }
 

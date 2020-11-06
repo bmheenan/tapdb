@@ -14,6 +14,7 @@ type DBInterface interface {
 	ClearThreads(domain string) error
 	ClearThreadsPC(domain string) error
 	ClearStakeholders(domain string) error
+	ClearThreadsStakeholdersPC(domain string) error
 
 	NewPersonteam(email, domain, name, abbrev, colorf, colorb string, itertiming taps.IterTiming) error
 	LinkPersonteams(parent, child, domain string) error
@@ -22,10 +23,12 @@ type DBInterface interface {
 
 	NewThread(name, domain, owner, iteration, state string, percentile float64, cost int) (int64, error)
 	LinkThreads(parent, child int64, iter string, ord int, domain string) error
+	LinkThreadsStakeholder(parent, child int, stakeholder, domain string) error
+	GetThreadOrderBefore(parent int64, iter string, order int) (int, error)
+
 	GetThreadrel(id int64, stakeholder string) (*taps.Threadrel, error)
 	GetThreadDescendants(id int64, stakeholder string) (map[int64](*taps.Threadrel), error)
 	GetThreadAncestors(id int64, stakeholder string) (map[int64](*taps.Threadrel), error)
-	GetThreadOrderBefore(parent int64, iter string, order int) (int, error)
 	GetChildThreadsSkIter(threads []int64, stakeholder, iteration string) (map[int64](*taps.Threadrel), error)
 	GetParentThreadsSkIter(threads []int64, stakeholder, iteration string) (map[int64](*taps.Threadrel), error)
 

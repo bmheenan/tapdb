@@ -48,3 +48,12 @@ func (db *mysqlDB) ClearStakeholders(domain string) error {
 	;`, domain))
 	return err
 }
+
+// ClearThreadsStakholdersPC deletes all threads_stakeholders_parent_child relationiships for the matching domain
+func (db *mysqlDB) ClearThreadsStakeholdersPC(domain string) error {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	DELETE FROM threads_stakeholders_parent_child
+	WHERE       domain = '%v'
+	;`, domain))
+	return err
+}
