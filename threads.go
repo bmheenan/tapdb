@@ -71,3 +71,12 @@ func (db *mysqlDB) GetThreadOrderBefore(parent int64, iter string, order int) (i
 	}
 	return max + ((order - max) / 2), nil
 }
+
+func (db *mysqlDB) SetThreadCostTotal(id int64, cost int) error {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	UPDATE threads
+	SET    costtotal = %v
+	WHERE  id = %v
+	`, cost, id))
+	return err
+}
