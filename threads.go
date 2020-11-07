@@ -66,7 +66,29 @@ func (db *mysqlDB) GetThreadOrderBefore(parent int64, iter string, order int) (i
 	for qr.Next() {
 		errScn := qr.Scan(&max)
 		if errScn != nil {
-			return 0, fmt.Errorf("Could not scan max value: %v", errScn)
+			return 0, nil
+		}
+	}
+	return max + ((order - max) / 2), nil
+}
+
+func (db *mysqlDB) GetPersonteamOrderBefore(personteam, iter string, order int) (int, error) {
+	qr, errQry := db.conn.Query(fmt.Sprintf(`
+	SELECT MAX(ord) AS ord
+	FROM   threads_stakeholders
+	WHERE  stakeholder = %v
+	  AND  ord < %v
+	  AND  iteration = '%v'
+	;`, personteam, order, iter))
+	if errQry != nil {
+		return 0, fmt.Errorf("Could not query for previous thread order: %v", errQry)
+	}
+	defer qr.Close()
+	max := 0
+	for qr.Next() {
+		errScn := qr.Scan(&max)
+		if errScn != nil {
+			return 0, nil
 		}
 	}
 	return max + ((order - max) / 2), nil

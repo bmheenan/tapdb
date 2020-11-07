@@ -25,6 +25,7 @@ type DBInterface interface {
 	LinkThreads(parent, child int64, iter string, ord int, domain string) error
 	LinkThreadsStakeholder(parent, child int64, stakeholder, domain string) error
 	GetThreadOrderBefore(parent int64, iter string, order int) (int, error)
+	GetPersonteamOrderBefore(personteam, iter string, order int) (int, error)
 	SetThreadCostTotal(id int64, cost int) error
 	SetThreadOrderParent(thread, parent int64, order int) error
 	SetThreadOrderStakeholder(thread int64, stakeholder string, order int) error
