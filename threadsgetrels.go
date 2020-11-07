@@ -296,65 +296,67 @@ func (db *mysqlDB) getChPaThreadsSkIter(
 	return ret, nil
 }
 
-func (db *mysqlDB) GetThreadrelsByParentIter(parent int64, iter string) (map[int64](*taps.Threadrel), error) {
+func (db *mysqlDB) GetThreadrelsByParentIter(parent int64, iter string) ([](*taps.Threadrel), error) {
 	qr, errQr := db.conn.Query(fmt.Sprintf(`
-	SELECT t.id
-	  ,    t.state
-	  ,    t.owner
-	  ,    t.percentile
-	  ,    t.iteration
-	  ,    t.costdirect
-	  ,    pc.ord
-	FROM   threads t
-	  JOIN threads_parent_child pc
-	  ON   pc.child = t.id
-	WHERE  pc.parent = %v
-	  AND  pc.iteration = '%v'
+	SELECT   t.id
+	  ,      t.state
+	  ,      t.owner
+	  ,      t.percentile
+	  ,      t.iteration
+	  ,      t.costdirect
+	  ,      pc.ord
+	FROM     threads t
+	  JOIN   threads_parent_child pc
+	  ON     pc.child = t.id
+	WHERE    pc.parent = %v
+	  AND    pc.iteration = '%v'
+	ORDER BY pc.ord
 	;`, parent, iter))
 	if errQr != nil {
-		return map[int64](*taps.Threadrel){}, fmt.Errorf("Could not query for threads: %v", errQr)
+		return [](*taps.Threadrel){}, fmt.Errorf("Could not query for threads: %v", errQr)
 	}
 	defer qr.Close()
-	ths := map[int64](*taps.Threadrel){}
+	ths := [](*taps.Threadrel){}
 	for qr.Next() {
 		th := &taps.Threadrel{}
 		errScn := qr.Scan(&th.ID, &th.State, &th.Owner, &th.Percentile, &th.Iteration, &th.CostDirect, &th.Order)
 		if errScn != nil {
-			return map[int64](*taps.Threadrel){}, fmt.Errorf("Could not scan thread: %v", errScn)
+			return [](*taps.Threadrel){}, fmt.Errorf("Could not scan thread: %v", errScn)
 		}
-		ths[th.ID] = th
+		ths = append(ths, th)
 	}
 	return ths, nil
 }
 
-func (db *mysqlDB) GetThreadrelsByStakeholderIter(stakeholder, iter string) (map[int64](*taps.Threadrel), error) {
+func (db *mysqlDB) GetThreadrelsByStakeholderIter(stakeholder, iter string) ([](*taps.Threadrel), error) {
 	qr, errQr := db.conn.Query(fmt.Sprintf(`
-	SELECT t.id
-	  ,    t.state
-	  ,    t.owner
-	  ,    t.percentile
-	  ,    t.iteration
-	  ,    t.costdirect
-	  ,    s.ord
-	FROM   threads t
-	  JOIN threads_stakeholders s
-	  ON   s.thread = t.id
-	WHERE  s.stakeholder = '%v'
-	  AND  s.iteration = '%v'
+	SELECT   t.id
+	  ,      t.state
+	  ,      t.owner
+	  ,      t.percentile
+	  ,      t.iteration
+	  ,      t.costdirect
+	  ,      s.ord
+	FROM     threads t
+	  JOIN   threads_stakeholders s
+	  ON     s.thread = t.id
+	WHERE    s.stakeholder = '%v'
+	  AND    s.iteration = '%v'
+	ORDER BY s.ord
 	;`, stakeholder, iter))
 	if errQr != nil {
-		return map[int64](*taps.Threadrel){}, fmt.Errorf("Could not query for threads: %v", errQr)
+		return [](*taps.Threadrel){}, fmt.Errorf("Could not query for threads: %v", errQr)
 	}
 	defer qr.Close()
-	ths := map[int64](*taps.Threadrel){}
+	ths := [](*taps.Threadrel){}
 	for qr.Next() {
 		th := &taps.Threadrel{}
 		errScn := qr.Scan(&th.ID, &th.State, &th.Owner, &th.Percentile, &th.Iteration, &th.CostDirect, &th.Order)
 		if errScn != nil {
-			return map[int64](*taps.Threadrel){}, fmt.Errorf("Could not scan thread: %v", errScn)
+			return [](*taps.Threadrel){}, fmt.Errorf("Could not scan thread: %v", errScn)
 		}
 		th.StakeholderMatch = true
-		ths[th.ID] = th
+		ths = append(ths, th)
 	}
 	return ths, nil
 }
