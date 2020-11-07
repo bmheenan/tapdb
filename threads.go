@@ -77,6 +77,26 @@ func (db *mysqlDB) SetThreadCostTotal(id int64, cost int) error {
 	UPDATE threads
 	SET    costtotal = %v
 	WHERE  id = %v
-	`, cost, id))
+	;`, cost, id))
+	return err
+}
+
+func (db *mysqlDB) SetThreadOrderParent(thread, parent int64, order int) error {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	UPDATE threads_parent_child
+	SET    ord = %v
+	WHERE  child = %v
+	  AND  parent = %v
+	;`, order, thread, parent))
+	return err
+}
+
+func (db *mysqlDB) SetThreadOrderStakeholder(thread int64, stakeholder string, order int) error {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	UPDATE threads_stakeholders
+	SET    ord = %v
+	WHERE  thread = %v
+	  AND  stakeholder = %v
+	;`, order, thread, stakeholder))
 	return err
 }
