@@ -1,5 +1,6 @@
 package tapdb
 
+/*
 import (
 	"errors"
 	"fmt"
@@ -122,3 +123,4 @@ func (db *mysqlDB) SetThreadOrderStakeholder(thread int64, stakeholder string, o
 	;`, order, thread, stakeholder))
 	return err
 }
+*/

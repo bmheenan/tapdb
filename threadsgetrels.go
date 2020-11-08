@@ -1,5 +1,7 @@
 package tapdb
 
+/*
+
 import (
 	"database/sql"
 	"fmt"
@@ -360,3 +362,4 @@ func (db *mysqlDB) GetThreadrelsByStakeholderIter(stakeholder, iter string) ([](
 	}
 	return ths, nil
 }
+*/

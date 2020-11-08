@@ -1,30 +1,30 @@
 package tapdb
 
 import (
-	"errors"
 	"testing"
 )
 
 func TestNewAndGetPersonteam(t *testing.T) {
-	db, errSetup := setupForTest()
+	db, errSetup := setupEmptyDB()
 	if errSetup != nil {
 		t.Errorf("Could not set up test: %v", errSetup)
 		return
 	}
-	errNew := db.NewPersonteam("a@example.com", "example.com", "Team A", "A", "#ffffff", "#000000", "monthly")
+	errNew := db.NewStk("a@example.com", "example.com", "Team A", "A", "#ffffff", "#000000", "monthly")
 	if errNew != nil {
-		t.Errorf("Error trying to insert new personteam: %v", errNew)
+		t.Errorf("Error trying to insert new stakeholder: %v", errNew)
 	}
-	pt, errGet := db.GetPersonteam("a@example.com")
+	stk, errGet := db.GetStk("a@example.com")
 	if errGet != nil {
 		t.Errorf("GetPersonteam returned an error: %v", errGet)
 		return
 	}
-	if pt.Email != "a@example.com" {
-		t.Errorf("Expected email to be a@example.com but got %v", pt.Email)
+	if stk.Email != "a@example.com" {
+		t.Errorf("Expected email to be a@example.com but got %v", stk.Email)
 	}
 }
 
+/*
 func TestPTNotFound(t *testing.T) {
 	db, errSetup := setupForTest()
 	if errSetup != nil {
@@ -149,3 +149,4 @@ func TestPTDescendantsNotFound(t *testing.T) {
 		return
 	}
 }
+*/

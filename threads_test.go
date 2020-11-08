@@ -1,5 +1,6 @@
 package tapdb
 
+/*
 import (
 	"fmt"
 	"testing"
@@ -268,3 +269,4 @@ func setupWithPersonteams() (DBInterface, []string, error) {
 	}
 	return db, es, nil
 }
+*/

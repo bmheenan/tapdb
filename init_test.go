@@ -13,30 +13,34 @@ func TestInitDb(t *testing.T) {
 	}
 }
 
-func setupForTest() (DBInterface, error) {
-	db, err := Init(getTestCredentials())
-	if err != nil {
-		return &mysqlDB{}, fmt.Errorf("Init returned error: %v", err)
+func setupEmptyDB() (DBInterface, error) {
+	db, errS := Init(getTestCredentials())
+	if errS != nil {
+		return &mysqlDB{}, errS
 	}
-	errSk := db.ClearStakeholders("example.com")
-	if errSk != nil {
-		return &mysqlDB{}, fmt.Errorf("Could not clear stakeholders: %v", errSk)
+	errThStkH := db.ClearThreadStkHierLinks("example.com")
+	if errThStkH != nil {
+		return &mysqlDB{}, fmt.Errorf("Could not clear threads/stakeholders heirarchy links: %v", errThStkH)
 	}
-	errTPC := db.ClearThreadsPC("example.com")
-	if errTPC != nil {
-		return &mysqlDB{}, fmt.Errorf("Could not clear thread parent child relationships: %v", errTPC)
+	errThStk := db.ClearThreadStkLinks("example.com")
+	if errThStk != nil {
+		return &mysqlDB{}, fmt.Errorf("Could not clear threads/stakeholders links: %v", errThStk)
+	}
+	errThH := db.ClearThreadHierLinks("example.com")
+	if errThH != nil {
+		return &mysqlDB{}, fmt.Errorf("Could not clear threads heirarchy links: %v", errThH)
 	}
 	errTh := db.ClearThreads("example.com")
 	if errTh != nil {
 		return &mysqlDB{}, fmt.Errorf("Could not clear threads: %v", errTh)
 	}
-	errCPC := db.ClearPersonteamsPC("example.com")
-	if errCPC != nil {
-		return &mysqlDB{}, fmt.Errorf("Could not clear personteam parent/child relationships: %v", errCPC)
+	errStkH := db.ClearStkHierLinks("example.com")
+	if errStkH != nil {
+		return &mysqlDB{}, fmt.Errorf("Could not clear stakeholders heirarchy: %v", errStkH)
 	}
-	errCPT := db.ClearPersonteams("example.com")
-	if errCPT != nil {
-		return &mysqlDB{}, fmt.Errorf("Could not clear personteams: %v", errCPT)
+	errStk := db.ClearStks("example.com")
+	if errStk != nil {
+		return &mysqlDB{}, fmt.Errorf("Could not clear stakeholders: %v", errStk)
 	}
 	return db, nil
 }
