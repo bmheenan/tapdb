@@ -1,10 +1,11 @@
 package tapdb
 
 import (
+	"errors"
 	"testing"
 )
 
-func TestNewAndGetPersonteam(t *testing.T) {
+func TestNewAndGetStk(t *testing.T) {
 	db, errSetup := setupEmptyDB()
 	if errSetup != nil {
 		t.Errorf("Could not set up test: %v", errSetup)
@@ -24,20 +25,19 @@ func TestNewAndGetPersonteam(t *testing.T) {
 	}
 }
 
-/*
-func TestPTNotFound(t *testing.T) {
-	db, errSetup := setupForTest()
+func TestGetStkNotFound(t *testing.T) {
+	db, errSetup := setupEmptyDB()
 	if errSetup != nil {
 		t.Errorf("Could not set up test: %v", errSetup)
 		return
 	}
-	errNew := db.NewPersonteam("a@example.com", "example.com", "Team A", "A", "#ffffff", "#000000", "monthly")
+	errNew := db.NewStk("a@example.com", "example.com", "Team A", "A", "#ffffff", "#000000", "monthly")
 	if errNew != nil {
-		t.Errorf("Error trying to insert new personteam: %v", errNew)
+		t.Errorf("Error trying to insert new stakeholder: %v", errNew)
 	}
-	pt, errGet := db.GetPersonteam("b@example.com")
+	pt, errGet := db.GetStk("b@example.com")
 	if errGet == nil {
-		t.Errorf("GetPersonteam didn't return an error for a personteam that didn't exist. Returned: %v", pt)
+		t.Errorf("GetStk didn't return an error for a stakeholder that didn't exist. Returned: %v", pt)
 		return
 	}
 	if !errors.Is(errGet, ErrNotFound) {
@@ -46,13 +46,13 @@ func TestPTNotFound(t *testing.T) {
 	}
 }
 
-func TestGetPersonteamDescendants(t *testing.T) {
-	db, errSetup := setupForTest()
+func TestGetStkDes(t *testing.T) {
+	db, errSetup := setupEmptyDB()
 	if errSetup != nil {
 		t.Errorf("Could not set up test: %v", errSetup)
 		return
 	}
-	allPTs := []string{
+	allStks := []string{
 		"a@example.com",
 		"aa@example.com",
 		"aaa@example.com",
@@ -60,10 +60,10 @@ func TestGetPersonteamDescendants(t *testing.T) {
 		"b@example.com",
 		"ba@example.com",
 	}
-	for _, e := range allPTs {
-		errNew := db.NewPersonteam(e, "example.com", "Personteam", "A", "#ffffff", "#000000", "monthly")
+	for _, e := range allStks {
+		errNew := db.NewStk(e, "example.com", "Personteam", "A", "#ffffff", "#000000", "monthly")
 		if errNew != nil {
-			t.Errorf("Error trying to insert new personteam %v: %v", e, errNew)
+			t.Errorf("Error trying to insert new stakeholder %v: %v", e, errNew)
 			return
 		}
 	}
@@ -88,19 +88,20 @@ func TestGetPersonteamDescendants(t *testing.T) {
 			c: "ba@example.com",
 		},
 	} {
-		errPC := db.LinkPersonteams(l.p, l.c, "example.com")
+		errPC := db.NewStkHierLink(l.p, l.c, "example.com")
 		if errPC != nil {
-			t.Errorf("Error trying to link personteams %v and %v: %v", l.p, l.c, errPC)
+			t.Errorf("Error trying to make %v a parent of %v: %v", l.p, l.c, errPC)
 			return
 		}
 	}
-	pts0, errG0 := db.GetPersonteamDescendants("a@example.com")
+	stks0, errG0 := db.GetStkDes("a@example.com")
 	if errG0 != nil {
-		t.Errorf("GetPersonteamDescendants returned an error: %v", errG0)
+		t.Errorf("GetStkDes returned an error: %v", errG0)
 		return
 	}
-	if len(pts0) != 4 {
-		t.Errorf("GetpersonteamDescendants expected length %v, got %v", len(allPTs), 4)
+	if len(stks0) != 4 {
+		t.Errorf("GetStkDes expected length 4, but got %v", len(stks0))
+		return
 	}
 	for _, e := range []string{
 		"a@example.com",
@@ -108,40 +109,40 @@ func TestGetPersonteamDescendants(t *testing.T) {
 		"aaa@example.com",
 		"ab@example.com",
 	} {
-		if _, ok := pts0[e]; !ok {
-			t.Errorf("GetPersonteamDescendants was missing %v", e)
+		if _, ok := stks0[e]; !ok {
+			t.Errorf("GetStkDes (0) was missing %v", e)
 			return
 		}
 	}
-	pts1, errG1 := db.GetPersonteamDescendants("b@example.com")
+	stks1, errG1 := db.GetStkDes("b@example.com")
 	if errG1 != nil {
-		t.Errorf("GetPersonteamDescendants returned an error: %v", errG1)
+		t.Errorf("GetStkDes returned an error: %v", errG1)
 		return
 	}
-	if len(pts1) != 2 {
-		t.Errorf("GetpersonteamDescendants expected length 2, got %v", len(pts1))
+	if len(stks1) != 2 {
+		t.Errorf("GetStkDes expected length 2, got %v", len(stks1))
 	}
 	for _, e := range []string{"b@example.com", "ba@example.com"} {
-		if _, ok := pts1[e]; !ok {
-			t.Errorf("GetPersonteamDescendants was missing %v", e)
+		if _, ok := stks1[e]; !ok {
+			t.Errorf("GetStkDes (1) was missing %v", e)
 			return
 		}
 	}
 }
 
 func TestPTDescendantsNotFound(t *testing.T) {
-	db, errSetup := setupForTest()
+	db, errSetup := setupEmptyDB()
 	if errSetup != nil {
 		t.Errorf("Could not set up test: %v", errSetup)
 		return
 	}
-	errNew := db.NewPersonteam("a@example.com", "example.com", "Team A", "A", "#ffffff", "#000000", "monthly")
+	errNew := db.NewStk("a@example.com", "example.com", "Team A", "A", "#ffffff", "#000000", "monthly")
 	if errNew != nil {
 		t.Errorf("Error trying to insert new personteam: %v", errNew)
 	}
-	pt, errGet := db.GetPersonteamDescendants("b@example.com")
+	stks, errGet := db.GetStkDes("b@example.com")
 	if errGet == nil {
-		t.Errorf("GetPersonteamDescendants didn't return an error for a personteam that didn't exist. Returned: %v", pt)
+		t.Errorf("GetStkDes didn't return an error for a stakeholder that didn't exist. Returned: %v", stks)
 		return
 	}
 	if !errors.Is(errGet, ErrNotFound) {
@@ -149,4 +150,3 @@ func TestPTDescendantsNotFound(t *testing.T) {
 		return
 	}
 }
-*/
