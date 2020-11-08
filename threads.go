@@ -1,22 +1,15 @@
 package tapdb
 
-/*
 import (
-	"errors"
 	"fmt"
 )
 
-// NewThread inserts a new thread into the db with the given data. It assumes the thread has no children.
-// Returns the id of the newly inserted thread or an error
-func (db *mysqlDB) NewThread(name, domain, owner, iteration, state string, percentile float64, cost int) (int64, error) {
-	if name == "" || domain == "" || owner == "" || iteration == "" || state == "" || percentile < 0 || cost < 0 {
-		return 0, fmt.Errorf("Args must be non-blank; cost and percenitle must be >= 0: %w", ErrBadArgs)
-	}
+func (db *mysqlDB) NewThread(name, domain, owner, iter, state string, percentile float64, cost int) (int64, error) {
 	res, errIn := db.conn.Exec(fmt.Sprintf(`
 	INSERT INTO threads
-	            (name, domain, owner, iteration, state, percentile, costdirect, costtotal)
-	VALUES      ('%v',   '%v',  '%v',      '%v',  '%v',         %v,         %v,        %v)
-	;`, name, domain, owner, iteration, state, percentile, cost, cost))
+	            (name, domain, owner, iter, state, percentile, costdir, costtot)
+	VALUES      ('%v',   '%v',  '%v', '%v',  '%v',         %v,      %v,      %v)
+	;`, name, domain, owner, iter, state, percentile, cost, cost))
 	if errIn != nil {
 		return 0, fmt.Errorf("Could not insert new thread into db: %v", errIn)
 	}
@@ -27,40 +20,34 @@ func (db *mysqlDB) NewThread(name, domain, owner, iteration, state string, perce
 	return id, nil
 }
 
-func (db *mysqlDB) LinkThreads(parent, child int64, iter string, ord int, domain string) error {
-	if ord < 0 || domain == "" || iter == "" {
-		return fmt.Errorf("Domain and iteration must be non-blank; order must be >= 0: %w", ErrBadArgs)
-	}
+func (db *mysqlDB) NewThreadHierLink(parent, child int64, iter string, ord int, domain string) error {
 	_, err := db.conn.Exec(fmt.Sprintf(`
-	INSERT INTO threads_parent_child
-	            (parent, child, domain, iteration, ord)
-	VALUES      (    %v,    %v,   '%v',      '%v',  %v)
+	INSERT INTO threads_hierarchy
+	            (parent, child, domain, iter, ord)
+	VALUES      (    %v,    %v,   '%v', '%v',  %v)
 	;`, parent, child, domain, iter, ord))
 	return err
 }
 
-func (db *mysqlDB) LinkThreadsStakeholder(parent, child int64, stakeholder, domain string) error {
-	if domain == "" || stakeholder == "" {
-		return errors.New("Doman and stakeholder must be non-blank")
-	}
+func (db *mysqlDB) NewThreadHierLinkForStk(parent, child int64, stk, domain string) error {
 	_, err := db.conn.Exec(fmt.Sprintf(`
-	INSERT INTO threads_stakeholders_parent_child
-				(parent, child, stakeholder, domain)
-	VALUES      (    %v,    %v,        '%v',   '%v')
-	;`, parent, child, stakeholder, domain))
+	INSERT INTO threads_stakeholders_hierarchy
+				(parent, child,  stk, domain)
+	VALUES      (    %v,    %v, '%v',   '%v')
+	;`, parent, child, stk, domain))
 	return err
 }
 
-func (db *mysqlDB) GetThreadOrderBefore(parent int64, iter string, order int) (int, error) {
-	qr, errQry := db.conn.Query(fmt.Sprintf(`
+func (db *mysqlDB) GetOrdBeforeForParent(parent int64, iter string, ord int) (int, error) {
+	qr, errQr := db.conn.Query(fmt.Sprintf(`
 	SELECT MAX(ord) AS ord
-	FROM   threads_parent_child
+	FROM   threads_hierarchy
 	WHERE  parent = %v
 	  AND  ord < %v
 	  AND  iteration = '%v'
-	;`, parent, order, iter))
-	if errQry != nil {
-		return 0, fmt.Errorf("Could not query for previous thread order: %v", errQry)
+	;`, parent, ord, iter))
+	if errQr != nil {
+		return 0, fmt.Errorf("Could not query for previous thread order: %v", errQr)
 	}
 	defer qr.Close()
 	max := 0
@@ -70,17 +57,17 @@ func (db *mysqlDB) GetThreadOrderBefore(parent int64, iter string, order int) (i
 			return 0, nil
 		}
 	}
-	return max + ((order - max) / 2), nil
+	return max, nil
 }
 
-func (db *mysqlDB) GetPersonteamOrderBefore(personteam, iter string, order int) (int, error) {
+func (db *mysqlDB) GetOrdBeforeForStk(stk, iter string, ord int) (int, error) {
 	qr, errQry := db.conn.Query(fmt.Sprintf(`
 	SELECT MAX(ord) AS ord
 	FROM   threads_stakeholders
-	WHERE  stakeholder = %v
+	WHERE  stk = %v
 	  AND  ord < %v
-	  AND  iteration = '%v'
-	;`, personteam, order, iter))
+	  AND  iter = '%v'
+	;`, stk, ord, iter))
 	if errQry != nil {
 		return 0, fmt.Errorf("Could not query for previous thread order: %v", errQry)
 	}
@@ -92,35 +79,34 @@ func (db *mysqlDB) GetPersonteamOrderBefore(personteam, iter string, order int) 
 			return 0, nil
 		}
 	}
-	return max + ((order - max) / 2), nil
+	return max, nil
 }
 
-func (db *mysqlDB) SetThreadCostTotal(id int64, cost int) error {
+func (db *mysqlDB) SetOrdForParent(thread, parent int64, ord int) error {
 	_, err := db.conn.Exec(fmt.Sprintf(`
-	UPDATE threads
-	SET    costtotal = %v
-	WHERE  id = %v
-	;`, cost, id))
-	return err
-}
-
-func (db *mysqlDB) SetThreadOrderParent(thread, parent int64, order int) error {
-	_, err := db.conn.Exec(fmt.Sprintf(`
-	UPDATE threads_parent_child
+	UPDATE threads_hierarchy
 	SET    ord = %v
 	WHERE  child = %v
 	  AND  parent = %v
-	;`, order, thread, parent))
+	;`, ord, thread, parent))
 	return err
 }
 
-func (db *mysqlDB) SetThreadOrderStakeholder(thread int64, stakeholder string, order int) error {
+func (db *mysqlDB) SetOrdForStk(thread int64, stk string, ord int) error {
 	_, err := db.conn.Exec(fmt.Sprintf(`
 	UPDATE threads_stakeholders
 	SET    ord = %v
 	WHERE  thread = %v
-	  AND  stakeholder = %v
-	;`, order, thread, stakeholder))
+	  AND  stk = %v
+	;`, ord, thread, stk))
 	return err
 }
-*/
+
+func (db *mysqlDB) SetCostTot(thread int64, cost int) error {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	UPDATE threads
+	SET    costtotal = %v
+	WHERE  id = %v
+	;`, cost, thread))
+	return err
+}

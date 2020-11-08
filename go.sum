@@ -6,5 +6,7 @@ github.com/bmheenan/taps v0.0.0-20201107234856-ef2dfd88d458 h1:oM8gMP8iwYaLgWbYD
 github.com/bmheenan/taps v0.0.0-20201107234856-ef2dfd88d458/go.mod h1:H6HrpTwiPHsDKciJIt9dWIvmlsjBszoXADE6DGOCh40=
 github.com/bmheenan/taps v0.0.0-20201108020940-cf9f5a68ab12 h1:Kw1R7HHA0XedOJn4v/YOf2ysJVRG3dZEStFENYh/n8E=
 github.com/bmheenan/taps v0.0.0-20201108020940-cf9f5a68ab12/go.mod h1:H6HrpTwiPHsDKciJIt9dWIvmlsjBszoXADE6DGOCh40=
+github.com/bmheenan/taps v0.0.0-20201108125953-f12bf6f24309 h1:W0G7B/KC07W6G7XpHcnigpyOfwWZIJ/O53X/3OUDmzI=
+github.com/bmheenan/taps v0.0.0-20201108125953-f12bf6f24309/go.mod h1:H6HrpTwiPHsDKciJIt9dWIvmlsjBszoXADE6DGOCh40=
 github.com/go-sql-driver/mysql v1.5.0 h1:ozyZYNQW3x3HtqT1jira07DN2PArx2v7/mN66gGcHOs=
 github.com/go-sql-driver/mysql v1.5.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg=

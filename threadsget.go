@@ -1,14 +1,119 @@
 package tapdb
 
-/*
-
 import (
-	"database/sql"
 	"fmt"
 
 	"github.com/bmheenan/taps"
 )
 
+func (db *mysqlDB) GetThread(thread int64) (*taps.Thread, error) {
+	thQr, errTh := db.conn.Query(fmt.Sprintf(`
+	SELECT id
+	  ,    name
+	  ,    description
+	  ,    state
+	  ,    costdir
+	  ,    costtot
+	  ,    owner
+	  ,    iter
+	  ,    percentile
+	FROM   threads
+	WHERE  id = %v
+	;`, thread))
+	if errTh != nil {
+		return nil, fmt.Errorf("Could not query data for thread %v: %v", thread, errTh)
+	}
+	defer thQr.Close()
+	if thQr.Next() {
+		var (
+			oEmail string
+			th     *taps.Thread
+		)
+		errScn := thQr.Scan(
+			&th.ID,
+			&th.Name,
+			&th.Desc,
+			&th.State,
+			&th.CostDir,
+			&th.CostTot,
+			&oEmail,
+			&th.Iter,
+			&th.Percentile,
+		)
+		if errScn != nil {
+			return nil, fmt.Errorf("Could not scan thread %v: %v", thread, errScn)
+		}
+		o, errO := db.GetStk(oEmail)
+		if errO != nil {
+			return nil, fmt.Errorf("Could not get stakeholder %v: %v", oEmail, errO)
+		}
+		th.Owner = *o
+		th.Stks = map[string](struct {
+			Iter   string
+			Ord    int
+			Cost   int
+			Toplvl bool
+		}){}
+		stksQr, errStks := db.conn.Query(fmt.Sprintf(`
+		SELECT stk
+		  ,    iter
+		  ,    ord
+		  ,    cost
+		  ,    toplvl
+		FROM   threads_stakeholders
+		WHERE  thread = %v
+		;`, th.ID))
+		if errStks != nil {
+			return nil, fmt.Errorf("Could not query stakeholders of %v: %v", th.ID, errStks)
+		}
+		defer stksQr.Close()
+		for stksQr.Next() {
+			var e string
+			stk := struct {
+				Iter   string
+				Ord    int
+				Cost   int
+				Toplvl bool
+			}{}
+			errScn := stksQr.Scan(&e, &stk.Iter, &stk.Ord, &stk.Cost, &stk.Toplvl)
+			if errScn != nil {
+				return nil, fmt.Errorf("Could not scan stakeholder: %v", errScn)
+			}
+			th.Stks[e] = stk
+		}
+		th.Parents = map[int64](struct {
+			Iter string
+			Ord  int
+		}){}
+		parQr, errP := db.conn.Query(fmt.Sprintf(`
+		SELECT parent
+		  ,    iter
+		  ,    ord
+		FROM   threads_hierarchy
+		WHERE  child = %v
+		;`, th.ID))
+		if errP != nil {
+			return nil, fmt.Errorf("Could not query parents of %v: %v", th.ID, errP)
+		}
+		defer parQr.Close()
+		for parQr.Next() {
+			var i int64
+			p := struct {
+				Iter string
+				Ord  int
+			}{}
+			errScn := parQr.Scan(&i, &p.Iter, &p.Ord)
+			if errScn != nil {
+				return nil, fmt.Errorf("Could not scan parent: %v", errScn)
+			}
+			th.Parents[i] = p
+		}
+		return th, nil
+	}
+	return nil, fmt.Errorf("No thread found with id %v: %w", thread, ErrNotFound)
+}
+
+/*
 // GetThreadrel returns a Threadrel for the matching thread `id`. `StakeholderMatch` and `Order` will not be filled
 func (db *mysqlDB) GetThreadrel(id int64, stakeholder string) (*taps.Threadrel, error) {
 	qr, errQry := db.conn.Query(fmt.Sprintf(`
