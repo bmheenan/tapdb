@@ -1,6 +1,7 @@
 package tapdb
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/bmheenan/taps"
@@ -25,14 +26,13 @@ func (db *mysqlDB) GetThread(thread int64) (*taps.Thread, error) {
 	}
 	defer thQr.Close()
 	if thQr.Next() {
-		var (
-			oEmail string
-			th     *taps.Thread
-		)
+		var oEmail string
+		var desc sql.NullString
+		th := &taps.Thread{}
 		errScn := thQr.Scan(
 			&th.ID,
 			&th.Name,
-			&th.Desc,
+			&desc,
 			&th.State,
 			&th.CostDir,
 			&th.CostTot,
@@ -42,6 +42,9 @@ func (db *mysqlDB) GetThread(thread int64) (*taps.Thread, error) {
 		)
 		if errScn != nil {
 			return nil, fmt.Errorf("Could not scan thread %v: %v", thread, errScn)
+		}
+		if desc.Valid {
+			th.Desc = desc.String
 		}
 		o, errO := db.GetStk(oEmail)
 		if errO != nil {
@@ -113,60 +116,89 @@ func (db *mysqlDB) GetThread(thread int64) (*taps.Thread, error) {
 	return nil, fmt.Errorf("No thread found with id %v: %w", thread, ErrNotFound)
 }
 
-/*
-// GetThreadrel returns a Threadrel for the matching thread `id`. `StakeholderMatch` and `Order` will not be filled
-func (db *mysqlDB) GetThreadrel(id int64, stakeholder string) (*taps.Threadrel, error) {
+func (db *mysqlDB) GetThreadDes(thread int64) (map[int64](*taps.Thread), error) {
+	thTop, errTop := db.GetThread(thread)
+	if errTop != nil {
+		return nil, fmt.Errorf("Could not get top thread: %w", errTop)
+	}
+	ths := map[int64](*taps.Thread){
+		thTop.ID: thTop,
+	}
 	qr, errQry := db.conn.Query(fmt.Sprintf(`
-	SELECT      t.id
-	  ,         t.state
-	  ,         t.costdirect
-	  ,         t.owner
-	  ,         t.iteration
-	  ,         t.percentile
-	  ,         CASE WHEN s.stakeholder = '%v'
-					 THEN true
-					 ELSE false
-					 END AS stakeholdermatch
-	  ,         CASE WHEN s.ord IS NULL
-					 THEN 0
-					 ELSE s.ord
-					 END AS ord
-	FROM        threads t
-	  LEFT JOIN (
-				SELECT thread
-				  ,    stakeholder
-				  ,    ord
-				FROM   threads_stakeholders
-				WHERE  stakeholder = '%v'
-				  AND  thread = %v
-				) AS s
-	  ON        t.id = s.thread
-	WHERE       id = %v
-	;`, stakeholder, stakeholder, id, id))
+	WITH   RECURSIVE des (child, parent) AS
+	       (
+	       SELECT child
+	         ,    parent
+	       FROM   threads_hierarchy
+	       WHERE  parent = %v
+	       UNION ALL
+	       SELECT t.child
+	         ,    t.parent
+	       FROM   threads_hierarchy t
+	       JOIN   des d
+	         ON   t.parent = d.child
+		   )
+	SELECT DISTINCT child
+	FROM   des
+	;`, thread))
 	if errQry != nil {
-		return &taps.Threadrel{}, fmt.Errorf("Could not query for thread: %v", errQry)
+		return nil, fmt.Errorf("Could not query for descendant threads: %v", errQry)
 	}
 	defer qr.Close()
 	for qr.Next() {
-		th := &taps.Threadrel{}
-		errScn := qr.Scan(
-			&th.ID,
-			&th.State,
-			&th.CostDirect,
-			&th.Owner,
-			&th.Iteration,
-			&th.Percentile,
-			&th.StakeholderMatch,
-			&th.Order,
-		)
-		if errScn != nil {
-			return &taps.Threadrel{}, fmt.Errorf("Could not scan thread: %v", errScn)
+		var i int64
+		qr.Scan(&i)
+		th, errTh := db.GetThread(i)
+		if errTh != nil {
+			return nil, fmt.Errorf("Could not get descendant thread: %v", errTh)
 		}
-		return th, nil
+		ths[th.ID] = th
 	}
-	return &taps.Threadrel{}, fmt.Errorf("No thread found with id %v: %w", id, ErrNotFound)
+	return ths, nil
 }
 
+func (db *mysqlDB) GetThreadAns(thread int64) (map[int64](*taps.Thread), error) {
+	thBtm, errBtm := db.GetThread(thread)
+	if errBtm != nil {
+		return nil, fmt.Errorf("Could not get bottom thread: %w", errBtm)
+	}
+	ths := map[int64](*taps.Thread){
+		thBtm.ID: thBtm,
+	}
+	qr, errQry := db.conn.Query(fmt.Sprintf(`
+	WITH   RECURSIVE ans (child, parent) AS
+	       (
+	       SELECT child
+	         ,    parent
+	       FROM   threads_hierarchy
+	       WHERE  child = %v
+	       UNION ALL
+	       SELECT t.child
+	         ,    t.parent
+	       FROM   threads_hierarchy t
+	       JOIN   ans a
+	         ON   t.child = a.parent
+		   )
+	SELECT DISTINCT parent
+	FROM   ans
+	;`, thread))
+	if errQry != nil {
+		return nil, fmt.Errorf("Could not query for ancestor threads: %v", errQry)
+	}
+	defer qr.Close()
+	for qr.Next() {
+		var i int64
+		qr.Scan(&i)
+		th, errTh := db.GetThread(i)
+		if errTh != nil {
+			return nil, fmt.Errorf("Could not get ancestor thread: %v", errTh)
+		}
+		ths[th.ID] = th
+	}
+	return ths, nil
+}
+
+/*
 // GetThreadDescendants returns a threadrel map containing all threads that are descendands of the provided `id`
 // (including itself). `StakeholderMatch` and `Order` will not be filled in
 func (db *mysqlDB) GetThreadDescendants(id int64, stakeholder string) (map[int64](*taps.Threadrel), error) {

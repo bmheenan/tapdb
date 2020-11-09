@@ -106,3 +106,55 @@ func (db *mysqlDB) GetStkDes(email string) (map[string](*taps.Stakeholder), erro
 	}
 	return stks, nil
 }
+
+func (db *mysqlDB) GetStkAns(email string) (map[string](*taps.Stakeholder), error) {
+	btmStk, errBtm := db.GetStk(email)
+	if errBtm != nil {
+		return map[string](*taps.Stakeholder){}, fmt.Errorf("Could not get bottom stakeholder %v: %w", email, errBtm)
+	}
+	stks := map[string](*taps.Stakeholder){
+		email: btmStk,
+	}
+	qr, errQr := db.conn.Query(fmt.Sprintf(`
+	WITH   RECURSIVE ans (child, parent) AS
+	       (
+	       SELECT child
+	         ,    parent
+	       FROM   stakeholders_hierarchy
+	       WHERE  child = '%v'
+	       UNION ALL
+	       SELECT h.child
+	         ,    h.parent
+	       FROM   stakeholders_hierarchy h
+	       JOIN   ans a
+	         ON   h.child = a.parent
+	       )
+	SELECT s.email
+	  ,    s.domain
+	  ,    s.name
+	  ,    s.abbrev
+	  ,    s.colorf
+	  ,    s.colorb
+	  ,    s.cadence
+	FROM   ans a
+	  JOIN stakeholders s
+	  ON   s.email = a.parent
+	;`, email))
+	if errQr != nil {
+		return map[string](*taps.Stakeholder){}, fmt.Errorf(
+			"Could not query for descendants of stakeholder %v: %v",
+			email,
+			errQr,
+		)
+	}
+	defer qr.Close()
+	for qr.Next() {
+		stk := taps.Stakeholder{}
+		errScn := qr.Scan(&stk.Email, &stk.Domain, &stk.Name, &stk.Abbrev, &stk.ColorF, &stk.ColorB, &stk.Cadence)
+		if errScn != nil {
+			return map[string](*taps.Stakeholder){}, fmt.Errorf("Could not scan stakeholder: %v", errScn)
+		}
+		stks[stk.Email] = &stk
+	}
+	return stks, nil
+}

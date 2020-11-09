@@ -44,6 +44,9 @@ type DBInterface interface {
 	// GetStkDes gets all stakeholders that are descendants of the stakeholder with `email` (including itself)
 	GetStkDes(email string) (map[string](*taps.Stakeholder), error)
 
+	// GetStkAns gets all stakeholders that are ancestors of the stakeholder with `email` (including itself)
+	GetStkAns(email string) (map[string](*taps.Stakeholder), error)
+
 	// threads.go
 
 	// NewThread makes a new thread with the given info. It returns the thread's new id
@@ -53,23 +56,12 @@ type DBInterface interface {
 	// child's base iteration expresed in the cadence of `parent`'s owner)
 	NewThreadHierLink(parent, child int64, iter string, ord int, domain string) error
 
-	// NewThreadHierLinkForStk makes `parent` a parent of `child` in `stk`'s context. `child` should be a descendant of
-	// `parent` and `stk` should be a stakeholder of both of them
-	NewThreadHierLinkForStk(parent, child int64, stk, domain string) error
-
 	// GetOrdBeforeForParent returns the highest order of any thread under `parent` in `iter`, thats lower than
 	// `order`
 	GetOrdBeforeForParent(parent int64, iter string, ord int) (int, error)
 
-	// GetOrdBeforeForStk returns the highest order of any thread with `stk` as a stakeholder in `iter`, thats lower
-	// than `order`
-	GetOrdBeforeForStk(stk, iter string, ord int) (int, error)
-
 	// SetThreadOrderForParent sets `thread`'s order under `parent` to `order`
 	SetOrdForParent(thread, parent int64, ord int) error
-
-	// SetThreadOrderForStk sets `thread`'s order under `stk` to `order`
-	SetOrdForStk(thread int64, stk string, ord int) error
 
 	// SetThreadCosttot sets `thread`'s total cost (including descendants) to `cost`
 	SetCostTot(thread int64, cost int) error
@@ -77,21 +69,38 @@ type DBInterface interface {
 	// threadsget.go
 
 	// GetThread returns the Thread with id matching `thread`
-	GetThread(thred int64) (*taps.Thread, error)
+	GetThread(thread int64) (*taps.Thread, error)
+
+	// GetThreadDes gets all descendant threads of `thread` (including itself)
+	GetThreadDes(thread int64) (map[int64](*taps.Thread), error)
+
+	// GetThreadAns gets all ancestor threads of `thread` (including itself)
+	GetThreadAns(thread int64) (map[int64](*taps.Thread), error)
+
+	// threadsstks.go
+
+	// NewThreadStkLink makes `stk` a stakeholder of `thread`, with `thread` showing in `iter` in order `ord`, costing
+	// `cost` for this stakeholder and all subteams + teammembers. It's `toplvl` if the stakeholder has no ancestor
+	// threads in the same iteration
+	NewThreadStkLink(thread int64, stk, domain, iter string, ord int, toplvl bool, cost int) error
+
+	// NewThreadHierLinkForStk makes `parent` a parent of `child` in `stk`'s context. `child` should be a descendant of
+	// `parent` and `stk` should be a stakeholder of both of them
+	NewThreadHierLinkForStk(parent, child int64, stk, domain string) error
+
+	// GetOrdBeforeForStk returns the highest order of any thread with `stk` as a stakeholder in `iter`, thats lower
+	// than `order`
+	GetOrdBeforeForStk(stk, iter string, ord int) (int, error)
+
+	// SetThreadOrderForStk sets `thread`'s order under `stk` to `order`
+	SetOrdForStk(thread int64, stk string, ord int) error
 
 	/*
-
-		GetThreadDescendants(id int64, stakeholder string) (map[int64](*taps.Threadrel), error)
-		GetThreadAncestors(id int64, stakeholder string) (map[int64](*taps.Threadrel), error)
 		GetChildThreadsSkIter(threads []int64, stakeholder, iteration string) (map[int64](*taps.Threadrel), error)
 		GetParentThreadsSkIter(threads []int64, stakeholder, iteration string) (map[int64](*taps.Threadrel), error)
 		GetThreadrelsByStakeholderIter(stakeholder, iter string) ([](*taps.Threadrel), error)
 		GetThreadrelsByParentIter(parent int64, iter string) ([](*taps.Threadrel), error)
 
-		NewStakeholder(thread int64, stakeholder, domain, iter string, ord int, topLvl bool, cost int) error
-		GetStakeholderAncestors(thread int64) (map[string]*taps.Personteam, error)
-		GetStakeholderDescendants(thread int64) (map[string]*taps.Personteam, error)
-		GetStakeholderOrderBefore(stakeholder, iter string, order int) (int, error)
 		SetStakeholderCostTotal(thread int64, stakeholder string, cost int) error
 		SetStakeholderTopThread(thread int64, stakeholder string, top bool) error
 	*/

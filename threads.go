@@ -29,47 +29,16 @@ func (db *mysqlDB) NewThreadHierLink(parent, child int64, iter string, ord int, 
 	return err
 }
 
-func (db *mysqlDB) NewThreadHierLinkForStk(parent, child int64, stk, domain string) error {
-	_, err := db.conn.Exec(fmt.Sprintf(`
-	INSERT INTO threads_stakeholders_hierarchy
-				(parent, child,  stk, domain)
-	VALUES      (    %v,    %v, '%v',   '%v')
-	;`, parent, child, stk, domain))
-	return err
-}
-
 func (db *mysqlDB) GetOrdBeforeForParent(parent int64, iter string, ord int) (int, error) {
 	qr, errQr := db.conn.Query(fmt.Sprintf(`
 	SELECT MAX(ord) AS ord
 	FROM   threads_hierarchy
 	WHERE  parent = %v
 	  AND  ord < %v
-	  AND  iteration = '%v'
+	  AND  iter = '%v'
 	;`, parent, ord, iter))
 	if errQr != nil {
 		return 0, fmt.Errorf("Could not query for previous thread order: %v", errQr)
-	}
-	defer qr.Close()
-	max := 0
-	for qr.Next() {
-		errScn := qr.Scan(&max)
-		if errScn != nil {
-			return 0, nil
-		}
-	}
-	return max, nil
-}
-
-func (db *mysqlDB) GetOrdBeforeForStk(stk, iter string, ord int) (int, error) {
-	qr, errQry := db.conn.Query(fmt.Sprintf(`
-	SELECT MAX(ord) AS ord
-	FROM   threads_stakeholders
-	WHERE  stk = %v
-	  AND  ord < %v
-	  AND  iter = '%v'
-	;`, stk, ord, iter))
-	if errQry != nil {
-		return 0, fmt.Errorf("Could not query for previous thread order: %v", errQry)
 	}
 	defer qr.Close()
 	max := 0
@@ -92,20 +61,10 @@ func (db *mysqlDB) SetOrdForParent(thread, parent int64, ord int) error {
 	return err
 }
 
-func (db *mysqlDB) SetOrdForStk(thread int64, stk string, ord int) error {
-	_, err := db.conn.Exec(fmt.Sprintf(`
-	UPDATE threads_stakeholders
-	SET    ord = %v
-	WHERE  thread = %v
-	  AND  stk = %v
-	;`, ord, thread, stk))
-	return err
-}
-
 func (db *mysqlDB) SetCostTot(thread int64, cost int) error {
 	_, err := db.conn.Exec(fmt.Sprintf(`
 	UPDATE threads
-	SET    costtotal = %v
+	SET    costtot = %v
 	WHERE  id = %v
 	;`, cost, thread))
 	return err
