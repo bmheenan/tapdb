@@ -71,11 +71,25 @@ type DBInterface interface {
 	// GetThread returns the Thread with id matching `thread`
 	GetThread(thread int64) (*taps.Thread, error)
 
+	// GetThreadsByStkIter returns all threads that have `stk` as a stakeholder in `iter`, ordered by ord
+	GetThreadsByStkIter(stk, iter string) ([](*taps.Thread), error)
+
+	// GetThreadsByParentIter returns all threads that are children of `parent` in `iter` ordered by ord
+	GetThreadsByParentIter(parent int64, iter string) ([](*taps.Thread), error)
+
 	// GetThreadDes gets all descendant threads of `thread` (including itself)
 	GetThreadDes(thread int64) (map[int64](*taps.Thread), error)
 
 	// GetThreadAns gets all ancestor threads of `thread` (including itself)
 	GetThreadAns(thread int64) (map[int64](*taps.Thread), error)
+
+	// GetThreadChildrenByStkIter returns the smallest map of threads that contains all descendants of `threads` which
+	// have `stk` as their stakeholder in `iter`.
+	GetThreadChildrenByStkIter(threads []int64, stk, iter string) (map[int64](*taps.Thread), error)
+
+	// GetThreadParentsByStkIter returns the smallest map of threads that contains all ancestors of `threads` which
+	// have `stk` as their stakeholder in `iter`.
+	GetThreadParentsByStkIter(threads []int64, stk, iter string) (map[int64](*taps.Thread), error)
 
 	// threadsstks.go
 
@@ -95,15 +109,12 @@ type DBInterface interface {
 	// SetThreadOrderForStk sets `thread`'s order under `stk` to `order`
 	SetOrdForStk(thread int64, stk string, ord int) error
 
-	/*
-		GetChildThreadsSkIter(threads []int64, stakeholder, iteration string) (map[int64](*taps.Threadrel), error)
-		GetParentThreadsSkIter(threads []int64, stakeholder, iteration string) (map[int64](*taps.Threadrel), error)
-		GetThreadrelsByStakeholderIter(stakeholder, iter string) ([](*taps.Threadrel), error)
-		GetThreadrelsByParentIter(parent int64, iter string) ([](*taps.Threadrel), error)
+	// SetCostForStk sets the cost of `thread` (just the peices owned by `stk`) to `cost`
+	SetCostForStk(thread int64, stk string, cost int) error
 
-		SetStakeholderCostTotal(thread int64, stakeholder string, cost int) error
-		SetStakeholderTopThread(thread int64, stakeholder string, top bool) error
-	*/
+	// SetTopForStk sets if `thread` is a top-level thread for `stk`-if it has no ancestors in the same iteration where
+	// `stk` is a stakeholder
+	SetTopForStk(thread int64, stk string, top bool) error
 }
 
 // ErrNotFound indicates that no matching record was found when querying
