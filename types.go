@@ -91,6 +91,13 @@ type DBInterface interface {
 	// have `stk` as their stakeholder in `iter`.
 	GetThreadParentsByStkIter(threads []int64, stk, iter string) (map[int64](*taps.Thread), error)
 
+	// GetThreadrowsByStkIter returns a hierarchical, ordered array of Threadrows where `stk` is a stakeholder in `iter`
+	GetThreadrowsByStkIter(stk, iter string) ([](*taps.Threadrow), error)
+
+	// GetThreadrowsByParentIter returns a hierarchical, ordered array of Threadrows that are descendants of `parent`
+	// in `iter`
+	GetThreadrowsByParentIter(parent int64, iter string) ([](*taps.Threadrow), error)
+
 	// threadsstks.go
 
 	// NewThreadStkLink makes `stk` a stakeholder of `thread`, with `thread` showing in `iter` in order `ord`, costing

@@ -324,3 +324,97 @@ func (db *mysqlDB) getThChPaByStkIter(threads []int64, stk, iter, dir string) (m
 	}
 	return ret, nil
 }
+
+func (db *mysqlDB) GetThreadrowsByStkIter(stk, iter string) ([](*taps.Threadrow), error) {
+	qr, errQr := db.conn.Query(fmt.Sprintf(`
+	WITH   q AS
+	       (
+		   SELECT thread
+			 ,    cost
+			 ,    iter
+			 ,    ord
+	       FROM   threads_stakeholders
+	       WHERE  stk = '%v'
+	         AND  iter = '%v'
+	         AND  toplvl = true
+	       )
+	SELECT t.id
+	  ,    t.name
+	  ,    t.state
+	  ,    q.cost
+	  ,    t.owner
+	  ,    t.iter
+	  ,    q.ord
+	FROM   threads t
+	  JOIN q
+	  ON   t.id = q.thread
+	;`, stk, iter))
+	if errQr != nil {
+		return nil, fmt.Errorf("Could not query for top level threads: %v", errQr)
+	}
+	defer qr.Close()
+	ths := [](*taps.Threadrow){}
+	for qr.Next() {
+		th := &taps.Threadrow{}
+		var oEmail string
+		errScn := qr.Scan(&th.ID, &th.Name, &th.State, &th.Cost, &oEmail, &th.Iter, &th.Ord)
+		if errScn != nil {
+			return nil, fmt.Errorf("Could not scan top level thread: %v", errScn)
+		}
+		tOwner, errO := db.GetStk(oEmail)
+		if errO != nil {
+			return nil, fmt.Errorf("Could not get stakeholder from email %v: %v", oEmail, errO)
+		}
+		th.Owner = *tOwner
+		errDes := db.fillThreadrowDesByStkIter(th, stk)
+		if errDes != nil {
+			return nil, fmt.Errorf("Could not fill decendants of %v: %v", th.Name, errDes)
+		}
+		ths = append(ths, th)
+	}
+	return nil, errors.New("Not implemented")
+}
+
+func (db *mysqlDB) fillThreadrowDesByStkIter(parent *taps.Threadrow, stk string) error {
+	qr, errQr := db.conn.Query(fmt.Sprintf(`
+	SELECT   h.child
+	  ,      t.name
+	  ,      t.state
+	  ,      s.cost
+	  ,      t.owner
+	  ,      t.iter
+	  ,      s.ord
+	FROM     threads_stakeholders_hierarchy h
+	  JOIN   threads t
+	  ON     h.child = t.id
+	  JOIN   threads_stakeholders s
+	  ON     h.child = s.thread
+	    AND  h.stk = s.stk 
+	WHERE    h.parent = %v
+	  AND    h.stk = '%v'
+	ORDER BY s.ord
+	;`, parent.ID, stk))
+	if errQr != nil {
+		return fmt.Errorf("Could not query for children: %v", errQr)
+	}
+	defer qr.Close()
+	for qr.Next() {
+		th := taps.Threadrow{}
+		var oEmail string
+		errScn := qr.Scan(&th.ID, &th.Name, &th.State, &th.Cost, &oEmail, &th.Iter, &th.Ord)
+		if errScn != nil {
+			return fmt.Errorf("Could not scan thread: %v", errScn)
+		}
+		thO, errO := db.GetStk(oEmail)
+		if errO != nil {
+			return fmt.Errorf("Could not get stakeholder from email %v: %v", oEmail, errO)
+		}
+		th.Owner = *thO
+		th.Children = append(th.Children, th)
+	}
+	return nil
+}
+
+func (db *mysqlDB) GetThreadrowsByParentIter(parent int64, iter string) ([](*taps.Threadrow), error) {
+	return nil, errors.New("Not implemented")
+}

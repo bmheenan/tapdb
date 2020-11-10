@@ -92,7 +92,8 @@ func (db *mysqlDB) makeTables() error {
 			INDEX (thread),
 			INDEX (stk),
 			INDEX (domain),
-			INDEX (iter)
+			INDEX (iter),
+			INDEX (toplvl)
 		);`)
 	if errThStk != nil {
 		return fmt.Errorf("Could not create threads_stakeholders table: %v", errThStk)
