@@ -372,7 +372,7 @@ func (db *mysqlDB) GetThreadrowsByStkIter(stk, iter string) ([](*taps.Threadrow)
 		}
 		ths = append(ths, th)
 	}
-	return nil, errors.New("Not implemented")
+	return ths, nil
 }
 
 func (db *mysqlDB) fillThreadrowDesByStkIter(parent *taps.Threadrow, stk string) error {
@@ -410,7 +410,7 @@ func (db *mysqlDB) fillThreadrowDesByStkIter(parent *taps.Threadrow, stk string)
 			return fmt.Errorf("Could not get stakeholder from email %v: %v", oEmail, errO)
 		}
 		th.Owner = *thO
-		th.Children = append(th.Children, th)
+		parent.Children = append(parent.Children, th)
 	}
 	return nil
 }
