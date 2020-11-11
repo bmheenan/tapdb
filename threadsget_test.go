@@ -185,6 +185,39 @@ func TestGetThreadrowsByStkIter(t *testing.T) {
 	}
 }
 
+func TestGetThreadrowsByParentIter(t *testing.T) {
+	db, _, ths, errSet := setupWithThreadsStks()
+	if errSet != nil {
+		t.Errorf("Could not set up test: %v", errSet)
+		return
+	}
+	res, errG := db.GetThreadrowsByParentIter(ths["A"], "2020 Oct")
+	if errG != nil {
+		t.Errorf("Could not get threadrows for thread A and iteration 2020 Oct: %v", errG)
+		return
+	}
+	if len(res) != 2 {
+		t.Errorf("Expected 2 threads but got %v", len(res))
+		return
+	}
+	if len(res[0].Children) != 0 {
+		t.Errorf("Expected 0 child threads of AA but got %v", len(res[0].Children))
+		return
+	}
+	if len(res[1].Children) != 0 {
+		t.Errorf("Expected 0 child threads of AB but got %v", len(res[1].Children))
+		return
+	}
+	if res[0].Name != "AA" {
+		t.Errorf("AA was not the first thread in the results")
+		return
+	}
+	if res[1].Name != "AB" {
+		t.Errorf("AB was not the second thread in the results")
+		return
+	}
+}
+
 func setupWithThreadsStks() (DBInterface, []string, map[string](int64), error) {
 	db, stks, errSet := setupWithStks()
 	if errSet != nil {
