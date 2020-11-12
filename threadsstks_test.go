@@ -67,6 +67,62 @@ func TestThStkLinkAndGetHasStks(t *testing.T) {
 	}
 }
 
+func TestSetAndGetOrdBeforeForStk(t *testing.T) {
+	db, stks, ths, errSet := setupWithThreadsStks()
+	if errSet != nil {
+		t.Errorf("Could not set up test: %v", errSet)
+		return
+	}
+	errSO := db.SetOrdForStk(ths["A"], stks[0], 5)
+	if errSO != nil {
+		t.Errorf("Could not set order for thread A for stakeholder %v: %v", stks[0], errSO)
+		return
+	}
+	th, errTh := db.GetThread(ths["A"])
+	if errTh != nil {
+		t.Errorf("Could not get thread B")
+		return
+	}
+	ob, errOB := db.GetOrdBeforeForStk(stks[0], "2020 Oct", th.Stks[stks[0]].Ord)
+	if errOB != nil {
+		t.Errorf("Could not get order before thread B: %v", errOB)
+		return
+	}
+	if ob != 4 {
+		t.Errorf("Expected order before to be 4, got %v", ob)
+		return
+	}
+}
+
+func TestSetCostAndTopForStk(t *testing.T) {
+	db, stks, ths, errSet := setupWithThreadsStks()
+	if errSet != nil {
+		t.Errorf("Could not set up test: %v", errSet)
+		return
+	}
+	errC := db.SetCostForStk(ths["B"], stks[2], 50)
+	if errC != nil {
+		t.Errorf("Could not set cost: %v", errC)
+		return
+	}
+	errT := db.SetTopForStk(ths["B"], stks[2], true)
+	if errT != nil {
+		t.Errorf("Could not set top: %v", errT)
+		return
+	}
+	th, errTh := db.GetThread(ths["B"])
+	if errTh != nil {
+		t.Errorf("Could not get thread: %v", errTh)
+		return
+	}
+	if !th.Stks[stks[2]].Toplvl {
+		t.Error("Thread was not top level")
+	}
+	if th.Stks[stks[2]].Cost != 50 {
+		t.Errorf("Expected cost to be 50, got %v", th.Stks[stks[1]].Cost)
+	}
+}
+
 func setupWithThreads() (DBInterface, []string, map[string](int64), error) {
 	db, stks, errSet := setupWithStks()
 	if errSet != nil {

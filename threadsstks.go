@@ -29,7 +29,7 @@ func (db *mysqlDB) GetOrdBeforeForStk(stk, iter string, ord int) (int, error) {
 	qr, errQry := db.conn.Query(fmt.Sprintf(`
 	SELECT MAX(ord) AS ord
 	FROM   threads_stakeholders
-	WHERE  stk = %v
+	WHERE  stk = '%v'
 	  AND  ord < %v
 	  AND  iter = '%v'
 	;`, stk, ord, iter))
@@ -52,7 +52,7 @@ func (db *mysqlDB) SetOrdForStk(thread int64, stk string, ord int) error {
 	UPDATE threads_stakeholders
 	SET    ord = %v
 	WHERE  thread = %v
-	  AND  stk = %v
+	  AND  stk = '%v'
 	;`, ord, thread, stk))
 	return err
 }
@@ -71,8 +71,8 @@ func (db *mysqlDB) SetTopForStk(thread int64, stk string, top bool) error {
 	_, err := db.conn.Exec(fmt.Sprintf(`
 	UPDATE threads_stakeholders
 	SET    toplvl = %v
-	WHERE  id = %v
-	  AND  stk = %v
+	WHERE  thread = %v
+	  AND  stk = '%v'
 	`, top, thread, stk))
 	return err
 }

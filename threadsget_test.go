@@ -293,7 +293,7 @@ func setupWithThreadsStks() (DBInterface, []string, map[string](int64), error) {
 			}
 		}
 		for _, s := range t.stks {
-			errS := db.NewThreadStkLink(ths[t.name], s, "example.com", "2020 Oct", 1, t.topFor[s], t.cost)
+			errS := db.NewThreadStkLink(ths[t.name], s, "example.com", "2020 Oct", t.ord, t.topFor[s], t.cost)
 			if errS != nil {
 				return nil, nil, nil, fmt.Errorf("Could not add stakeholder %v to thread %v: %v", s, t.name, errS)
 			}
