@@ -30,6 +30,14 @@ type DBInterface interface {
 	// ClearThreadStkHierLinks deletes all parent/child hierarchy links between threads for all stakeholders in `domain`
 	ClearThreadStkHierLinks(domain string) error
 
+	// iterations.go
+
+	// GetItersForStk returns all iterations with at least 1 thread where `stk` is a stakeholder
+	GetItersForStk(stk string) (iters []string, err error)
+
+	// GetItersForParent returns all iterations with at least 1 thread that's a child of `parent`
+	GetItersForParent(parent int64) (iters []string, err error)
+
 	// stakeholders.go
 
 	// NewStk makes a new stakeholder with the given info
