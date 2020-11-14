@@ -327,27 +327,28 @@ func (db *mysqlDB) getThChPaByStkIter(threads []int64, stk, iter, dir string) (m
 
 func (db *mysqlDB) GetThreadrowsByStkIter(stk, iter string) ([](*taps.Threadrow), error) {
 	qr, errQr := db.conn.Query(fmt.Sprintf(`
-	WITH   q AS
-	       (
-		   SELECT thread
-			 ,    cost
-			 ,    iter
-			 ,    ord
-	       FROM   threads_stakeholders
-	       WHERE  stk = '%v'
-	         AND  iter = '%v'
-	         AND  toplvl = true
-	       )
-	SELECT t.id
-	  ,    t.name
-	  ,    t.state
-	  ,    q.cost
-	  ,    t.owner
-	  ,    t.iter
-	  ,    q.ord
-	FROM   threads t
-	  JOIN q
-	  ON   t.id = q.thread
+	WITH     q AS
+	         (
+	         SELECT thread
+	           ,    cost
+	           ,    iter
+	           ,    ord
+	         FROM   threads_stakeholders
+	         WHERE  stk = '%v'
+	           AND  iter = '%v'
+	           AND  toplvl = true
+	         )
+	SELECT   t.id
+	  ,      t.name
+	  ,      t.state
+	  ,      q.cost
+	  ,      t.owner
+	  ,      t.iter
+	  ,      q.ord
+	FROM     threads t
+	  JOIN   q
+	  ON     t.id = q.thread
+	ORDER BY q.ord
 	;`, stk, iter))
 	if errQr != nil {
 		return nil, fmt.Errorf("Could not query for top level threads: %v", errQr)
@@ -418,25 +419,26 @@ func (db *mysqlDB) fillThreadrowDesByStkIter(parent *taps.Threadrow, stk, iter s
 
 func (db *mysqlDB) GetThreadrowsByParentIter(parent int64, iter string) ([](*taps.Threadrow), error) {
 	qr, errQr := db.conn.Query(fmt.Sprintf(`
-	WITH   q AS
-	       (
-		   SELECT child
-			 ,    iter
-			 ,    ord
-	       FROM   threads_hierarchy
-	       WHERE  parent = %v
-	         AND  iter = '%v'
-	       )
-	SELECT t.id
-	  ,    t.name
-	  ,    t.state
-	  ,    t.costtot
-	  ,    t.owner
-	  ,    t.iter
-	  ,    q.ord
-	FROM   threads t
-	  JOIN q
-	  ON   t.id = q.child
+	WITH     q AS
+	         (
+		     SELECT child
+			   ,    iter
+			   ,    ord
+	         FROM   threads_hierarchy
+	         WHERE  parent = %v
+	           AND  iter = '%v'
+	         )
+	SELECT   t.id
+	  ,      t.name
+	  ,      t.state
+	  ,      t.costtot
+	  ,      t.owner
+	  ,      t.iter
+	  ,      q.ord
+	FROM     threads t
+	  JOIN   q
+	  ON     t.id = q.child
+	ORDER BY q.ord
 	;`, parent, iter))
 	if errQr != nil {
 		return nil, fmt.Errorf("Could not query for child threads of %v: %v", parent, errQr)
