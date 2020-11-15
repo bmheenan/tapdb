@@ -25,6 +25,16 @@ func (db *mysqlDB) NewThreadHierLinkForStk(parent, child int64, stk, domain stri
 	return err
 }
 
+func (db *mysqlDB) DeleteThreadHierLinkForStk(parent, child int64, stk string) error {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	DELETE FROM threads_stakeholders_hierarchy
+	WHERE       parent = %v
+	  AND       child = %v
+	  AND       stk = '%v'
+	;`, parent, child, stk))
+	return err
+}
+
 func (db *mysqlDB) GetOrdBeforeForStk(stk, iter string, ord int) (int, error) {
 	qr, errQry := db.conn.Query(fmt.Sprintf(`
 	SELECT MAX(ord) AS ord
@@ -64,5 +74,15 @@ func (db *mysqlDB) SetCostForStk(thread int64, stk string, cost int) error {
 	WHERE  thread = %v
 	  AND  stk = '%v'
 	;`, cost, thread, stk))
+	return err
+}
+
+func (db *mysqlDB) SetIterForStk(thread int64, stk, iter string) error {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	UPDATE threads_stakeholders
+	SET    iter = '%v'
+	WHERE  thread = %v
+	  AND  stk = '%v'
+	;`, iter, thread, stk))
 	return err
 }

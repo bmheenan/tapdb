@@ -29,6 +29,15 @@ func (db *mysqlDB) NewThreadHierLink(parent, child int64, iter string, ord int, 
 	return err
 }
 
+func (db *mysqlDB) DeleteThreadHierLink(parent, child int64) error {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	DELETE FROM threads_hierarchy
+	WHERE       parent = %v
+	  AND       child = %v
+	;`, parent, child))
+	return err
+}
+
 func (db *mysqlDB) GetOrdBeforeForParent(parent int64, iter string, ord int) (int, error) {
 	qr, errQr := db.conn.Query(fmt.Sprintf(`
 	SELECT MAX(ord) AS ord
@@ -67,5 +76,24 @@ func (db *mysqlDB) SetCostTot(thread int64, cost int) error {
 	SET    costtot = %v
 	WHERE  id = %v
 	;`, cost, thread))
+	return err
+}
+
+func (db *mysqlDB) SetIter(thread int64, iter string) error {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	UPDATE threads
+	SET    iter = '%v'
+	WHERE  id = %v
+	;`, iter, thread))
+	return err
+}
+
+func (db *mysqlDB) SetIterForParent(parent, child int64, iter string) error {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	UPDATE threads_hierarchy
+	SET    iter = '%v'
+	WHERE  parent = %v
+	  AND  child = %v
+	;`, iter, parent, child))
 	return err
 }

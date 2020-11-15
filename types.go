@@ -67,6 +67,9 @@ type DBInterface interface {
 	// child's base iteration expresed in the cadence of `parent`'s owner)
 	NewThreadHierLink(parent, child int64, iter string, ord int, domain string) error
 
+	// DeleteThreadHierLink removes the record that `parent` is a parent of `child`
+	DeleteThreadHierLink(parent, child int64) error
+
 	// GetOrdBeforeForParent returns the highest order of any thread under `parent` in `iter`, thats lower than
 	// `order`
 	GetOrdBeforeForParent(parent int64, iter string, ord int) (int, error)
@@ -76,6 +79,12 @@ type DBInterface interface {
 
 	// SetThreadCosttot sets `thread`'s total cost (including descendants) to `cost`
 	SetCostTot(thread int64, cost int) error
+
+	// SetIter sets the iteration of `thread` to `iter`
+	SetIter(thread int64, iter string) error
+
+	// SetIterForParent sets the iteration of `child` in the context of `parent` to `iter`
+	SetIterForParent(parent, child int64, iter string) error
 
 	// threadsget.go
 
@@ -120,6 +129,9 @@ type DBInterface interface {
 	// `parent` and `stk` should be a stakeholder of both of them
 	NewThreadHierLinkForStk(parent, child int64, stk, domain string) error
 
+	// DeleteThreadHierLinkForStk removes the record that `parent` is a parent of `child` for stakeholder `stk`
+	DeleteThreadHierLinkForStk(parent, child int64, stk string) error
+
 	// GetOrdBeforeForStk returns the highest order of any thread with `stk` as a stakeholder in `iter`, thats lower
 	// than `order`
 	GetOrdBeforeForStk(stk, iter string, ord int) (int, error)
@@ -129,6 +141,9 @@ type DBInterface interface {
 
 	// SetCostForStk sets the cost of `thread` (just the peices owned by `stk`) to `cost`
 	SetCostForStk(thread int64, stk string, cost int) error
+
+	// SetIterForStk sets the iteration of `thread` in the context of `stk` to `iter`
+	SetIterForStk(thread int64, stk, iter string) error
 }
 
 // ErrNotFound indicates that no matching record was found when querying
