@@ -53,17 +53,15 @@ func (db *mysqlDB) GetThread(thread int64) (*taps.Thread, error) {
 		}
 		th.Owner = *o
 		th.Stks = map[string](struct {
-			Iter   string
-			Ord    int
-			Cost   int
-			Toplvl bool
+			Iter string
+			Ord  int
+			Cost int
 		}){}
 		stksQr, errStks := db.conn.Query(fmt.Sprintf(`
 		SELECT stk
 		  ,    iter
 		  ,    ord
 		  ,    cost
-		  ,    toplvl
 		FROM   threads_stakeholders
 		WHERE  thread = %v
 		;`, th.ID))
@@ -74,12 +72,11 @@ func (db *mysqlDB) GetThread(thread int64) (*taps.Thread, error) {
 		for stksQr.Next() {
 			var e string
 			stk := struct {
-				Iter   string
-				Ord    int
-				Cost   int
-				Toplvl bool
+				Iter string
+				Ord  int
+				Cost int
 			}{}
-			errScn := stksQr.Scan(&e, &stk.Iter, &stk.Ord, &stk.Cost, &stk.Toplvl)
+			errScn := stksQr.Scan(&e, &stk.Iter, &stk.Ord, &stk.Cost)
 			if errScn != nil {
 				return nil, fmt.Errorf("Could not scan stakeholder: %v", errScn)
 			}
@@ -327,28 +324,21 @@ func (db *mysqlDB) getThChPaByStkIter(threads []int64, stk, iter, dir string) (m
 
 func (db *mysqlDB) GetThreadrowsByStkIter(stk, iter string) ([](*taps.Threadrow), error) {
 	qr, errQr := db.conn.Query(fmt.Sprintf(`
-	WITH     q AS
-	         (
-	         SELECT thread
-	           ,    cost
-	           ,    iter
-	           ,    ord
-	         FROM   threads_stakeholders
-	         WHERE  stk = '%v'
-	           AND  iter = '%v'
-	           AND  toplvl = true
-	         )
-	SELECT   t.id
-	  ,      t.name
-	  ,      t.state
-	  ,      q.cost
-	  ,      t.owner
-	  ,      t.iter
-	  ,      q.ord
-	FROM     threads t
-	  JOIN   q
-	  ON     t.id = q.thread
-	ORDER BY q.ord
+	SELECT      t.id
+	  ,         t.name
+	  ,         t.state
+	  ,         s.cost
+	  ,         t.owner
+	  ,         t.iter
+	  ,         s.ord
+	FROM        threads t
+	  JOIN      threads_stakeholders s
+	  ON        t.id = s.thread
+	  LEFT JOIN threads_stakeholders_hierarchy h
+	  ON        t.id = h.child
+	WHERE       h.child IS NULL
+	  AND       s.stk = '%v'
+	  AND       s.iter = '%v'
 	;`, stk, iter))
 	if errQr != nil {
 		return nil, fmt.Errorf("Could not query for top level threads: %v", errQr)

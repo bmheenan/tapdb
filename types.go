@@ -129,10 +129,6 @@ type DBInterface interface {
 
 	// SetCostForStk sets the cost of `thread` (just the peices owned by `stk`) to `cost`
 	SetCostForStk(thread int64, stk string, cost int) error
-
-	// SetTopForStk sets if `thread` is a top-level thread for `stk`-if it has no ancestors in the same iteration where
-	// `stk` is a stakeholder
-	SetTopForStk(thread int64, stk string, top bool) error
 }
 
 // ErrNotFound indicates that no matching record was found when querying

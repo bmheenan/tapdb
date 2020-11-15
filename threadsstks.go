@@ -66,13 +66,3 @@ func (db *mysqlDB) SetCostForStk(thread int64, stk string, cost int) error {
 	;`, cost, thread, stk))
 	return err
 }
-
-func (db *mysqlDB) SetTopForStk(thread int64, stk string, top bool) error {
-	_, err := db.conn.Exec(fmt.Sprintf(`
-	UPDATE threads_stakeholders
-	SET    toplvl = %v
-	WHERE  thread = %v
-	  AND  stk = '%v'
-	`, top, thread, stk))
-	return err
-}

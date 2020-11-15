@@ -84,7 +84,6 @@ func (db *mysqlDB) makeTables() error {
 			domain VARCHAR(255) NOT NULL,
 			iter   VARCHAR(255) NOT NULL,
 			ord    INT          NOT NULL,
-			toplvl BOOL         NOT NULL,
 			cost   INT          NOT NULL,
 			PRIMARY KEY (thread, stk),
 			FOREIGN KEY (thread) REFERENCES threads(id),

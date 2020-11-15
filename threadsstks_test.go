@@ -94,7 +94,7 @@ func TestSetAndGetOrdBeforeForStk(t *testing.T) {
 	}
 }
 
-func TestSetCostAndTopForStk(t *testing.T) {
+func TestSetCostForStk(t *testing.T) {
 	db, stks, ths, errSet := setupWithThreadsStks()
 	if errSet != nil {
 		t.Errorf("Could not set up test: %v", errSet)
@@ -105,18 +105,10 @@ func TestSetCostAndTopForStk(t *testing.T) {
 		t.Errorf("Could not set cost: %v", errC)
 		return
 	}
-	errT := db.SetTopForStk(ths["B"], stks[2], true)
-	if errT != nil {
-		t.Errorf("Could not set top: %v", errT)
-		return
-	}
 	th, errTh := db.GetThread(ths["B"])
 	if errTh != nil {
 		t.Errorf("Could not get thread: %v", errTh)
 		return
-	}
-	if !th.Stks[stks[2]].Toplvl {
-		t.Error("Thread was not top level")
 	}
 	if th.Stks[stks[2]].Cost != 50 {
 		t.Errorf("Expected cost to be 50, got %v", th.Stks[stks[1]].Cost)
