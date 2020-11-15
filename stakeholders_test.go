@@ -233,3 +233,86 @@ func TestPTDescendantsNotFound(t *testing.T) {
 		return
 	}
 }
+
+func TestGetTeamsForDomain(t *testing.T) {
+	db, errSetup := setupEmptyDB()
+	if errSetup != nil {
+		t.Errorf("Could not set up test: %v", errSetup)
+		return
+	}
+	allStks := []string{
+		"a@example.com",
+		"aa@example.com",
+		"aaa@example.com",
+		"ab@example.com",
+		"b@example.com",
+		"ba@example.com",
+	}
+	for _, e := range allStks {
+		errNew := db.NewStk(e, "example.com", "Personteam", "A", "#ffffff", "#000000", "monthly")
+		if errNew != nil {
+			t.Errorf("Error trying to insert new stakeholder %v: %v", e, errNew)
+			return
+		}
+	}
+	for _, l := range []struct {
+		p string
+		c string
+	}{
+		{
+			p: "a@example.com",
+			c: "aa@example.com",
+		},
+		{
+			p: "aa@example.com",
+			c: "aaa@example.com",
+		},
+		{
+			p: "a@example.com",
+			c: "ab@example.com",
+		},
+		{
+			p: "b@example.com",
+			c: "ba@example.com",
+		},
+	} {
+		errPC := db.NewStkHierLink(l.p, l.c, "example.com")
+		if errPC != nil {
+			t.Errorf("Error trying to make %v a parent of %v: %v", l.p, l.c, errPC)
+			return
+		}
+	}
+	ret, errR := db.GetStksForDomain("example.com")
+	if errR != nil {
+		t.Errorf("Could not get all stakeholders: %v", errR)
+		return
+	}
+	if len(ret) != 2 {
+		t.Errorf("Expected 2 results; got %v", len(ret))
+		return
+	}
+	if ret[0].Stk.Email != "a@example.com" {
+		t.Errorf("expected a; got %v", ret[0].Stk.Email)
+		return
+	}
+	if ret[0].Members[0].Stk.Email != "aa@example.com" {
+		t.Errorf("expected aa; got %v", ret[0].Stk.Email)
+		return
+	}
+	if ret[0].Members[0].Members[0].Stk.Email != "aaa@example.com" {
+		t.Errorf("expected aaa; got %v", ret[0].Stk.Email)
+		return
+	}
+	if ret[0].Members[1].Stk.Email != "ab@example.com" {
+		t.Errorf("expected ab; got %v", ret[0].Stk.Email)
+		return
+	}
+	if ret[1].Stk.Email != "b@example.com" {
+		t.Errorf("expected b; got %v", ret[0].Stk.Email)
+		return
+	}
+	if ret[1].Members[0].Stk.Email != "ba@example.com" {
+		t.Errorf("expected ba; got %v", ret[0].Stk.Email)
+		return
+	}
+}

@@ -158,3 +158,81 @@ func (db *mysqlDB) GetStkAns(email string) (map[string](*taps.Stakeholder), erro
 	}
 	return stks, nil
 }
+
+func (db *mysqlDB) GetStksForDomain(domain string) (teams []*taps.Team, err error) {
+	qr, errQr := db.conn.Query(fmt.Sprintf(`
+	SELECT    s.email
+	  ,       s.name
+	  ,       s.abbrev
+	  ,       s.colorf
+	  ,       s.colorb
+	  ,       s.cadence
+	FROM      stakeholders s
+	LEFT JOIN stakeholders_hierarchy h
+	  ON      s.email = h.child
+	WHERE     h.child IS NULL
+	  AND     s.domain = '%v'
+	ORDER BY  s.name
+	;`, domain))
+	if errQr != nil {
+		err = fmt.Errorf("Could not query for top level stakeholders: %v", errQr)
+		return
+	}
+	defer qr.Close()
+	teams = []*taps.Team{}
+	for qr.Next() {
+		t := &taps.Team{
+			Stk:     taps.Stakeholder{},
+			Members: []taps.Team{},
+		}
+		errScn := qr.Scan(&t.Stk.Email, &t.Stk.Name, &t.Stk.Abbrev, &t.Stk.ColorF, &t.Stk.ColorB, &t.Stk.Cadence)
+		if errScn != nil {
+			err = fmt.Errorf("Could not scan stakeholder: %v", errScn)
+			return
+		}
+		errCh := db.fillStkChildren(t)
+		if errCh != nil {
+			err = fmt.Errorf("Could not get children of %v: %v", t.Stk.Email, errCh)
+			return
+		}
+		teams = append(teams, t)
+	}
+	return
+}
+
+func (db *mysqlDB) fillStkChildren(parent *taps.Team) (err error) {
+	qr, errQr := db.conn.Query(fmt.Sprintf(`
+	SELECT   s.email
+	  ,      s.name
+	  ,      s.abbrev
+	  ,      s.colorf
+	  ,      s.colorb
+	  ,      s.cadence
+	FROM     stakeholders s
+	JOIN     stakeholders_hierarchy h
+	  ON     s.email = h.child
+	WHERE    h.parent = '%v'
+	ORDER BY s.name
+	;`, parent.Stk.Email))
+	if errQr != nil {
+		err = fmt.Errorf("Could not query for children of %v: %v", parent.Stk.Email, errQr)
+		return
+	}
+	defer qr.Close()
+	parent.Members = []taps.Team{}
+	for qr.Next() {
+		m := taps.Team{}
+		errScn := qr.Scan(&m.Stk.Email, &m.Stk.Name, &m.Stk.Abbrev, &m.Stk.ColorF, &m.Stk.ColorB, &m.Stk.Cadence)
+		if errScn != nil {
+			err = fmt.Errorf("Could not scan child of %v: %v", parent.Stk.Name, errScn)
+			return
+		}
+		errF := db.fillStkChildren(&m)
+		if errF != nil {
+			err = fmt.Errorf("Could not get children of %v: %v", m.Stk.Name, errF)
+			return
+		}
+		parent.Members = append(parent.Members, m)
+	}
+	return
+}

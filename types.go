@@ -55,6 +55,9 @@ type DBInterface interface {
 	// GetStkAns gets all stakeholders that are ancestors of the stakeholder with `email` (including itself)
 	GetStkAns(email string) (map[string](*taps.Stakeholder), error)
 
+	// GetStksInDomain returns a hierarchical represtation of all teams and people in `domain`
+	GetStksForDomain(domain string) (teams []*taps.Team, err error)
+
 	// threads.go
 
 	// NewThread makes a new thread with the given info. It returns the thread's new id
