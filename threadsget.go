@@ -339,6 +339,8 @@ func (db *mysqlDB) GetThreadrowsByStkIter(stk, iter string) ([](*taps.Threadrow)
 	WHERE       h.child IS NULL
 	  AND       s.stk = '%v'
 	  AND       s.iter = '%v'
+	ORDER BY    t.iter
+	  ,         s.ord
 	;`, stk, iter))
 	if errQr != nil {
 		return nil, fmt.Errorf("Could not query for top level threads: %v", errQr)
@@ -384,7 +386,8 @@ func (db *mysqlDB) fillThreadrowDesByStkIter(parent *taps.Threadrow, stk, iter s
 	WHERE    h.parent = %v
 	  AND    h.stk = '%v'
 	  AND    s.iter = '%v'
-	ORDER BY s.ord
+	ORDER BY t.iter
+	  ,      s.ord
 	;`, parent.ID, stk, iter))
 	if errQr != nil {
 		return fmt.Errorf("Could not query for children: %v", errQr)
@@ -409,26 +412,19 @@ func (db *mysqlDB) fillThreadrowDesByStkIter(parent *taps.Threadrow, stk, iter s
 
 func (db *mysqlDB) GetThreadrowsByParentIter(parent int64, iter string) ([](*taps.Threadrow), error) {
 	qr, errQr := db.conn.Query(fmt.Sprintf(`
-	WITH     q AS
-	         (
-		     SELECT child
-			   ,    iter
-			   ,    ord
-	         FROM   threads_hierarchy
-	         WHERE  parent = %v
-	           AND  iter = '%v'
-	         )
 	SELECT   t.id
 	  ,      t.name
 	  ,      t.state
 	  ,      t.costtot
 	  ,      t.owner
 	  ,      t.iter
-	  ,      q.ord
+	  ,      h.ord
 	FROM     threads t
-	  JOIN   q
-	  ON     t.id = q.child
-	ORDER BY q.ord
+	  JOIN   threads_hierarchy h
+	  ON     t.id = h.child
+	WHERE    h.parent = %v
+	  AND    h.iter = '%v'
+	ORDER BY h.ord
 	;`, parent, iter))
 	if errQr != nil {
 		return nil, fmt.Errorf("Could not query for child threads of %v: %v", parent, errQr)
@@ -469,7 +465,8 @@ func (db *mysqlDB) fillThreadrowDes(parent *taps.Threadrow) error {
 	  JOIN   threads t
 	  ON     h.child = t.id
 	WHERE    h.parent = %v
-	ORDER BY h.ord
+	ORDER BY t.iter
+	  ,      h.ord
 	;`, parent.ID))
 	if errQr != nil {
 		return fmt.Errorf("Could not query for children: %v", errQr)
