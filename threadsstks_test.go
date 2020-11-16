@@ -159,3 +159,75 @@ func setupWithThreads() (DBInterface, []string, map[string](int64), error) {
 	}
 	return db, stks, ths, nil
 }
+
+func TestGetChildrenByParentStkLinks(t *testing.T) {
+	db, stks, errSet := setupWithStks()
+	if errSet != nil {
+		t.Errorf("Could not set up test: %v", errSet)
+		return
+	}
+	ths := map[string]int64{}
+	for _, n := range []string{"A", "B", "C"} {
+		id, errN := db.NewThread(n, "example.com", stks[0], "2020 Oct", string(taps.NotStarted), 1, 1)
+		if errN != nil {
+			t.Errorf("Could not insert thread: %v", errN)
+			return
+		}
+		ths[n] = id
+	}
+	errL1 := db.NewThreadHierLinkForStk(ths["A"], ths["B"], stks[0], "example.com")
+	if errL1 != nil {
+		t.Errorf("Could not link A and B: %v", errL1)
+		return
+	}
+	errL2 := db.NewThreadHierLinkForStk(ths["A"], ths["C"], stks[0], "example.com")
+	if errL2 != nil {
+		t.Errorf("Could not link A and C: %v", errL2)
+		return
+	}
+	chs, errG := db.GetChildrenByParentStkLinks(ths["A"], stks[0])
+	if errG != nil {
+		t.Errorf("Could not get children: %v", errG)
+		return
+	}
+	if len(chs) != 2 {
+		t.Errorf("Expected length 2; got %v", len(chs))
+		return
+	}
+}
+
+func TestGetParentsByChildStkLinks(t *testing.T) {
+	db, stks, errSet := setupWithStks()
+	if errSet != nil {
+		t.Errorf("Could not set up test: %v", errSet)
+		return
+	}
+	ths := map[string]int64{}
+	for _, n := range []string{"A", "B", "C"} {
+		id, errN := db.NewThread(n, "example.com", stks[0], "2020 Oct", string(taps.NotStarted), 1, 1)
+		if errN != nil {
+			t.Errorf("Could not insert thread: %v", errN)
+			return
+		}
+		ths[n] = id
+	}
+	errL1 := db.NewThreadHierLinkForStk(ths["B"], ths["C"], stks[0], "example.com")
+	if errL1 != nil {
+		t.Errorf("Could not link B and C: %v", errL1)
+		return
+	}
+	errL2 := db.NewThreadHierLinkForStk(ths["A"], ths["C"], stks[0], "example.com")
+	if errL2 != nil {
+		t.Errorf("Could not link A and C: %v", errL2)
+		return
+	}
+	pas, errG := db.GetParentsByChildStkLinks(ths["C"], stks[0])
+	if errG != nil {
+		t.Errorf("Could not get parents: %v", errG)
+		return
+	}
+	if len(pas) != 2 {
+		t.Errorf("Expected length 2; got %v", len(pas))
+		return
+	}
+}

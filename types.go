@@ -136,6 +136,12 @@ type DBInterface interface {
 	// than `order`
 	GetOrdBeforeForStk(stk, iter string, ord int) (int, error)
 
+	// GetChildrenByParentStkLinks gets all children of thread hier links for a `stk` where the parent is `parent`
+	GetChildrenByParentStkLinks(parent int64, stk string) (children []int64, err error)
+
+	// GetParentsByChildStkLinks gets all parents of thread hier links for a `stk` where the child is `child`
+	GetParentsByChildStkLinks(child int64, stk string) (parents []int64, err error)
+
 	// SetThreadOrderForStk sets `thread`'s order under `stk` to `order`
 	SetOrdForStk(thread int64, stk string, ord int) error
 

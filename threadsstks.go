@@ -57,6 +57,56 @@ func (db *mysqlDB) GetOrdBeforeForStk(stk, iter string, ord int) (int, error) {
 	return max, nil
 }
 
+func (db *mysqlDB) GetChildrenByParentStkLinks(parent int64, stk string) (children []int64, err error) {
+	qr, errQr := db.conn.Query(fmt.Sprintf(`
+	SELECT child
+	FROM   threads_stakeholders_hierarchy
+	WHERE  parent = %v
+	  AND  stk = '%v'
+	;`, parent, stk))
+	if errQr != nil {
+		err = fmt.Errorf("Could not query for threads_stakeholders_hierarchy links: %v", errQr)
+		return
+	}
+	defer qr.Close()
+	children = []int64{}
+	for qr.Next() {
+		var c int64
+		errScn := qr.Scan(&c)
+		if errScn != nil {
+			err = fmt.Errorf("Could not scan row: %v", errScn)
+			return
+		}
+		children = append(children, c)
+	}
+	return
+}
+
+func (db *mysqlDB) GetParentsByChildStkLinks(child int64, stk string) (parents []int64, err error) {
+	qr, errQr := db.conn.Query(fmt.Sprintf(`
+	SELECT parent
+	FROM   threads_stakeholders_hierarchy
+	WHERE  child = %v
+	  AND  stk = '%v'
+	;`, child, stk))
+	if errQr != nil {
+		err = fmt.Errorf("Could not query for threads_stakeholders_hierarchy links: %v", errQr)
+		return
+	}
+	defer qr.Close()
+	parents = []int64{}
+	for qr.Next() {
+		var p int64
+		errScn := qr.Scan(&p)
+		if errScn != nil {
+			err = fmt.Errorf("Could not scan row: %v", errScn)
+			return
+		}
+		parents = append(parents, p)
+	}
+	return
+}
+
 func (db *mysqlDB) SetOrdForStk(thread int64, stk string, ord int) error {
 	_, err := db.conn.Exec(fmt.Sprintf(`
 	UPDATE threads_stakeholders
