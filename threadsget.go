@@ -488,3 +488,35 @@ func (db *mysqlDB) fillThreadrowDes(parent *taps.Threadrow) error {
 	}
 	return nil
 }
+
+func (db *mysqlDB) GetThreadParentsForAnc(child, anc int64) (parents []*taps.Thread, err error) {
+	parents = []*taps.Thread{}
+	qr, err := db.conn.Query(fmt.Sprintf(`
+	SELECT h.parent
+	FROM   threads_hierarchy h
+	WHERE  h.child = '%v'
+	;`, child))
+	if err != nil {
+		err = fmt.Errorf("Could not get parents of %v: %v", child, err)
+		return
+	}
+	defer qr.Close()
+	for qr.Next() {
+		var pid int64
+		err = qr.Scan(&pid)
+		if err != nil {
+			err = fmt.Errorf("Could not scan parent id: %v", err)
+			return
+		}
+		var ans map[int64]*taps.Thread
+		ans, err = db.GetThreadAns(pid)
+		if err != nil {
+			err = fmt.Errorf("Could not get ancestors of %v: %v", pid, err)
+			return
+		}
+		if th, ok := ans[anc]; ok {
+			parents = append(parents, th)
+		}
+	}
+	return
+}

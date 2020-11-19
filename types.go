@@ -118,6 +118,9 @@ type DBInterface interface {
 	// in `iter`
 	GetThreadrowsByParentIter(parent int64, iter string) ([](*taps.Threadrow), error)
 
+	// GetThreadParentsForAnc returns all parents of `child` that have ancestor `anc`
+	GetThreadParentsForAnc(child, anc int64) (parents []*taps.Thread, err error)
+
 	// threadsstks.go
 
 	// NewThreadStkLink makes `stk` a stakeholder of `thread`, with `thread` showing in `iter` in order `ord`, costing

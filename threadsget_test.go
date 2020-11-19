@@ -218,6 +218,25 @@ func TestGetThreadrowsByParentIter(t *testing.T) {
 	}
 }
 
+func TestGetParentsForAnc(t *testing.T) {
+	db, _, ths, err := setupWithThreadsStks()
+	if err != nil {
+		t.Errorf("Could not set up test: %v", err)
+		return
+	}
+	pas, err := db.GetThreadParentsForAnc(ths["AA"], ths["A"])
+	if err != nil {
+		t.Errorf("Could not get parents: %v", err)
+		return
+	}
+	if x, m := 1, len(pas); x != m {
+		t.Errorf("Expected length %v; got %v", x, m)
+	}
+	if x, m := "A", pas[0].Name; x != m {
+		t.Errorf("Expected name %v; got %v", x, m)
+	}
+}
+
 func setupWithThreadsStks() (DBInterface, []string, map[string](int64), error) {
 	db, stks, errSet := setupWithStks()
 	if errSet != nil {
