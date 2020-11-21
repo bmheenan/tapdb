@@ -56,7 +56,7 @@ type DBInterface interface {
 	GetStkAns(email string) (map[string](*taps.Stakeholder), error)
 
 	// GetStksInDomain returns a hierarchical represtation of all teams and people in `domain`
-	GetStksForDomain(domain string) (teams []*taps.Team, err error)
+	GetStksForDomain(domain string) (teams []*taps.StkInHier, err error)
 
 	// threads.go
 

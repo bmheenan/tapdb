@@ -291,28 +291,28 @@ func TestGetTeamsForDomain(t *testing.T) {
 		t.Errorf("Expected 2 results; got %v", len(ret))
 		return
 	}
-	if ret[0].Stk.Email != "a@example.com" {
-		t.Errorf("expected a; got %v", ret[0].Stk.Email)
+	if ret[0].Email != "a@example.com" {
+		t.Errorf("expected a; got %v", ret[0].Email)
 		return
 	}
-	if ret[0].Members[0].Stk.Email != "aa@example.com" {
-		t.Errorf("expected aa; got %v", ret[0].Stk.Email)
+	if ret[0].Members[0].Email != "aa@example.com" {
+		t.Errorf("expected aa; got %v", ret[0].Email)
 		return
 	}
-	if ret[0].Members[0].Members[0].Stk.Email != "aaa@example.com" {
-		t.Errorf("expected aaa; got %v", ret[0].Stk.Email)
+	if ret[0].Members[0].Members[0].Email != "aaa@example.com" {
+		t.Errorf("expected aaa; got %v", ret[0].Email)
 		return
 	}
-	if ret[0].Members[1].Stk.Email != "ab@example.com" {
-		t.Errorf("expected ab; got %v", ret[0].Stk.Email)
+	if ret[0].Members[1].Email != "ab@example.com" {
+		t.Errorf("expected ab; got %v", ret[0].Email)
 		return
 	}
-	if ret[1].Stk.Email != "b@example.com" {
-		t.Errorf("expected b; got %v", ret[0].Stk.Email)
+	if ret[1].Email != "b@example.com" {
+		t.Errorf("expected b; got %v", ret[0].Email)
 		return
 	}
-	if ret[1].Members[0].Stk.Email != "ba@example.com" {
-		t.Errorf("expected ba; got %v", ret[0].Stk.Email)
+	if ret[1].Members[0].Email != "ba@example.com" {
+		t.Errorf("expected ba; got %v", ret[0].Email)
 		return
 	}
 }

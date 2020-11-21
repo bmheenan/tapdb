@@ -159,7 +159,7 @@ func (db *mysqlDB) GetStkAns(email string) (map[string](*taps.Stakeholder), erro
 	return stks, nil
 }
 
-func (db *mysqlDB) GetStksForDomain(domain string) (teams []*taps.Team, err error) {
+func (db *mysqlDB) GetStksForDomain(domain string) (teams []*taps.StkInHier, err error) {
 	qr, errQr := db.conn.Query(fmt.Sprintf(`
 	SELECT    s.email
 	  ,       s.name
@@ -179,20 +179,17 @@ func (db *mysqlDB) GetStksForDomain(domain string) (teams []*taps.Team, err erro
 		return
 	}
 	defer qr.Close()
-	teams = []*taps.Team{}
+	teams = []*taps.StkInHier{}
 	for qr.Next() {
-		t := &taps.Team{
-			Stk:     taps.Stakeholder{},
-			Members: []taps.Team{},
-		}
-		errScn := qr.Scan(&t.Stk.Email, &t.Stk.Name, &t.Stk.Abbrev, &t.Stk.ColorF, &t.Stk.ColorB, &t.Stk.Cadence)
+		t := &taps.StkInHier{}
+		errScn := qr.Scan(&t.Email, &t.Name, &t.Abbrev, &t.ColorF, &t.ColorB, &t.Cadence)
 		if errScn != nil {
 			err = fmt.Errorf("Could not scan stakeholder: %v", errScn)
 			return
 		}
 		errCh := db.fillStkChildren(t)
 		if errCh != nil {
-			err = fmt.Errorf("Could not get children of %v: %v", t.Stk.Email, errCh)
+			err = fmt.Errorf("Could not get children of %v: %v", t.Email, errCh)
 			return
 		}
 		teams = append(teams, t)
@@ -200,7 +197,7 @@ func (db *mysqlDB) GetStksForDomain(domain string) (teams []*taps.Team, err erro
 	return
 }
 
-func (db *mysqlDB) fillStkChildren(parent *taps.Team) (err error) {
+func (db *mysqlDB) fillStkChildren(parent *taps.StkInHier) (err error) {
 	qr, errQr := db.conn.Query(fmt.Sprintf(`
 	SELECT   s.email
 	  ,      s.name
@@ -213,23 +210,23 @@ func (db *mysqlDB) fillStkChildren(parent *taps.Team) (err error) {
 	  ON     s.email = h.child
 	WHERE    h.parent = '%v'
 	ORDER BY s.name
-	;`, parent.Stk.Email))
+	;`, parent.Email))
 	if errQr != nil {
-		err = fmt.Errorf("Could not query for children of %v: %v", parent.Stk.Email, errQr)
+		err = fmt.Errorf("Could not query for children of %v: %v", parent.Email, errQr)
 		return
 	}
 	defer qr.Close()
-	parent.Members = []taps.Team{}
+	parent.Members = []taps.StkInHier{}
 	for qr.Next() {
-		m := taps.Team{}
-		errScn := qr.Scan(&m.Stk.Email, &m.Stk.Name, &m.Stk.Abbrev, &m.Stk.ColorF, &m.Stk.ColorB, &m.Stk.Cadence)
+		m := taps.StkInHier{}
+		errScn := qr.Scan(&m.Email, &m.Name, &m.Abbrev, &m.ColorF, &m.ColorB, &m.Cadence)
 		if errScn != nil {
-			err = fmt.Errorf("Could not scan child of %v: %v", parent.Stk.Name, errScn)
+			err = fmt.Errorf("Could not scan child of %v: %v", parent.Name, errScn)
 			return
 		}
 		errF := db.fillStkChildren(&m)
 		if errF != nil {
-			err = fmt.Errorf("Could not get children of %v: %v", m.Stk.Name, errF)
+			err = fmt.Errorf("Could not get children of %v: %v", m.Name, errF)
 			return
 		}
 		parent.Members = append(parent.Members, m)
