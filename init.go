@@ -65,9 +65,7 @@ func Init(user, pass, connName string) (DBInterface, error) {
 // Format the connection string for both prod and local dev
 func fmtOpenStr(user, pass, host, port, unixSocket, connName, dbName string) string {
 	if unixSocket != "" {
-		oStr := fmt.Sprintf("%s:%s@unix(/%s/%s)/%s?parseTime=true", user, pass, unixSocket, connName, dbName)
-		fmt.Printf("Open string set to: %v", oStr)
-		return oStr
+		return fmt.Sprintf("%s:%s@unix(/%s/%s)/%s?parseTime=true", user, pass, unixSocket, connName, dbName)
 	}
 	return fmt.Sprintf("%s:%s@tcp([%s]:%s)/%s", user, pass, host, port, dbName)
 }
