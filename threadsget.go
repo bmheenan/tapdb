@@ -549,12 +549,21 @@ func (db *mysqlDB) GetThreadrowsByChild(child int64) (ths [](*taps.Threadrow), e
 	defer qr.Close()
 	ths = [](*taps.Threadrow){}
 	for qr.Next() {
-		var th taps.Threadrow
-		err = qr.Scan(&th.ID, &th.Name, &th.State, &th.Cost, &th.Owner, &th.Iter)
+		var (
+			th     taps.Threadrow
+			oEmail string
+		)
+		err = qr.Scan(&th.ID, &th.Name, &th.State, &th.Cost, &oEmail, &th.Iter)
 		if err != nil {
 			err = fmt.Errorf("Could not scan thread: %v", err)
 			return
 		}
+		thOwner, err := db.GetStk(oEmail)
+		if err != nil {
+			err = fmt.Errorf("Could not get owner from email: %v", err)
+			return nil, err
+		}
+		th.Owner = *thOwner
 		ths = append(ths, &th)
 	}
 	return
