@@ -528,3 +528,34 @@ func (db *mysqlDB) GetThreadParentsForAnc(child, anc int64) (parents []*taps.Thr
 	}
 	return
 }
+
+func (db *mysqlDB) GetThreadrowsByChild(child int64) (ths [](*taps.Threadrow), err error) {
+	qr, err := db.conn.Query(fmt.Sprintf(`
+	SELECT h.parent
+	  ,    t.name
+	  ,    t.state
+	  ,    t.costtot
+	  ,    t.owner
+	  ,    t.iter
+	FROM   threads_hierarchy h
+	  JOIN threads t
+	  ON   h.parent = t.id
+	WHERE  h.child = '%v'
+	;`, child))
+	if err != nil {
+		err = fmt.Errorf("Could not get parents of %v: %v", child, err)
+		return
+	}
+	defer qr.Close()
+	ths = [](*taps.Threadrow){}
+	for qr.Next() {
+		var th taps.Threadrow
+		err = qr.Scan(&th.ID, &th.Name, &th.State, &th.Cost, &th.Owner, &th.Iter)
+		if err != nil {
+			err = fmt.Errorf("Could not scan thread: %v", err)
+			return
+		}
+		ths = append(ths, &th)
+	}
+	return
+}
