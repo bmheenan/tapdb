@@ -9,6 +9,8 @@ func (db *mysqlDB) GetItersForStk(stk string) (iters []string, err error) {
 	SELECT   DISTINCT iter
 	FROM     threads_stakeholders
 	WHERE    stk = '%v'
+	  AND    iter != 'Inbox'
+	  AND    iter != 'Backlog'
 	ORDER BY iter
 	;`, stk))
 	if errQr != nil {
@@ -34,6 +36,8 @@ func (db *mysqlDB) GetItersForParent(parent int64) (iters []string, err error) {
 	SELECT   DISTINCT iter
 	FROM     threads_hierarchy
 	WHERE    parent = %v
+	  AND    iter != 'Inbox'
+	  AND    iter != 'Backlog'
 	ORDER BY iter
 	;`, parent))
 	if errQr != nil {

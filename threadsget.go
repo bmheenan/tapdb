@@ -405,6 +405,10 @@ func (db *mysqlDB) fillThreadrowDesByStkIter(parent *taps.Threadrow, stk, iter s
 			return fmt.Errorf("Could not get stakeholder from email %v: %v", oEmail, errO)
 		}
 		th.Owner = *thO
+		errDes := db.fillThreadrowDesByStkIter(&th, stk, iter)
+		if errDes != nil {
+			return fmt.Errorf("Could not fill decendants of %v: %v", th.Name, errDes)
+		}
 		parent.Children = append(parent.Children, th)
 	}
 	return nil
@@ -484,6 +488,10 @@ func (db *mysqlDB) fillThreadrowDes(parent *taps.Threadrow) error {
 			return fmt.Errorf("Could not get stakeholder from email %v: %v", oEmail, errO)
 		}
 		th.Owner = *thO
+		errDes := db.fillThreadrowDes(&th)
+		if errDes != nil {
+			return fmt.Errorf("Could not fill decendants of %v: %v", th.Name, errDes)
+		}
 		parent.Children = append(parent.Children, th)
 	}
 	return nil
