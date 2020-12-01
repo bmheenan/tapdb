@@ -2,6 +2,7 @@ package tapdb
 
 import (
 	"fmt"
+	"math"
 )
 
 func (db *mysqlDB) NewThread(name, domain, owner, iter, state string, percentile float64, cost int) (int64, error) {
@@ -47,7 +48,7 @@ func (db *mysqlDB) GetOrdBeforeForParent(parent int64, iter string, ord int) (in
 	  AND  iter = '%v'
 	;`, parent, ord, iter))
 	if errQr != nil {
-		return 0, fmt.Errorf("Could not query for previous thread order: %v", errQr)
+		return 0, fmt.Errorf("Could not query for thread order: %v", errQr)
 	}
 	defer qr.Close()
 	max := 0
@@ -58,6 +59,28 @@ func (db *mysqlDB) GetOrdBeforeForParent(parent int64, iter string, ord int) (in
 		}
 	}
 	return max, nil
+}
+
+func (db *mysqlDB) GetOrdAfterForParent(parent int64, iter string, ord int) (int, error) {
+	qr, err := db.conn.Query(fmt.Sprintf(`
+	SELECT MIN(ord) AS ord
+	FROM   threads_hierarchy
+	WHERE  parent = %v
+	  AND  ord > %v
+	  AND  iter = '%v'
+	;`, parent, ord, iter))
+	if err != nil {
+		return 0, fmt.Errorf("Could not query for thread order: %v", err)
+	}
+	defer qr.Close()
+	min := 0
+	for qr.Next() {
+		err = qr.Scan(&min)
+		if err != nil {
+			return math.MaxInt32, nil
+		}
+	}
+	return min, nil
 }
 
 func (db *mysqlDB) SetOrdForParent(thread, parent int64, ord int) error {

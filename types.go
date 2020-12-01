@@ -70,9 +70,11 @@ type DBInterface interface {
 	// DeleteThreadHierLink removes the record that `parent` is a parent of `child`
 	DeleteThreadHierLink(parent, child int64) error
 
-	// GetOrdBeforeForParent returns the highest order of any thread under `parent` in `iter`, thats lower than
-	// `order`
+	// GetOrdBeforeForParent returns the highest order of any thread under `parent` in `iter`, that's lower than `ord`
 	GetOrdBeforeForParent(parent int64, iter string, ord int) (int, error)
+
+	// GetOrdAfterForParent returns the lowest order of any thread under `parent` in `iter` that's higher than `ord`
+	GetOrdAfterForParent(parent int64, iter string, ord int) (int, error)
 
 	// SetThreadOrderForParent sets `thread`'s order under `parent` to `order`
 	SetOrdForParent(thread, parent int64, ord int) error
@@ -139,8 +141,12 @@ type DBInterface interface {
 	DeleteThreadHierLinkForStk(parent, child int64, stk string) error
 
 	// GetOrdBeforeForStk returns the highest order of any thread with `stk` as a stakeholder in `iter`, thats lower
-	// than `order`
+	// than `ord`
 	GetOrdBeforeForStk(stk, iter string, ord int) (int, error)
+
+	// GetOrdAfterForStk returns the lowest order of any thread with `stk` as a stakeholder in `iter`, that's higher
+	// than `ord`
+	GetOrdAfterForStk(stk, iter string, ord int) (int, error)
 
 	// GetChildrenByParentStkLinks gets all children of thread hier links for a `stk` where the parent is `parent`
 	GetChildrenByParentStkLinks(parent int64, stk string) (children []int64, err error)

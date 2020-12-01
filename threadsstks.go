@@ -2,6 +2,7 @@ package tapdb
 
 import (
 	"fmt"
+	"math"
 )
 
 func (db *mysqlDB) NewThreadStkLink(thread int64, stk, domain, iter string, ord int, toplvl bool, cost int) error {
@@ -55,6 +56,28 @@ func (db *mysqlDB) GetOrdBeforeForStk(stk, iter string, ord int) (int, error) {
 		}
 	}
 	return max, nil
+}
+
+func (db *mysqlDB) GetOrdAfterForStk(stk, iter string, ord int) (int, error) {
+	qr, err := db.conn.Query(fmt.Sprintf(`
+	SELECT MIN(ord) AS ord
+	FROM   threads_stakeholders
+	WHERE  stk = '%v'
+	  AND  ord > %v
+	  AND  iter = '%v'
+	;`, stk, ord, iter))
+	if err != nil {
+		return 0, fmt.Errorf("Could not query for thread order: %v", err)
+	}
+	defer qr.Close()
+	min := 0
+	for qr.Next() {
+		errScn := qr.Scan(&min)
+		if errScn != nil {
+			return math.MaxInt32, nil
+		}
+	}
+	return min, nil
 }
 
 func (db *mysqlDB) GetChildrenByParentStkLinks(parent int64, stk string) (children []int64, err error) {
