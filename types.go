@@ -100,7 +100,7 @@ type DBInterface interface {
 	GetThreadDes(thread int64) map[int64]*taps.Thread
 
 	// GetThreadAns gets all ancestor threads of `thread` (including itself)
-	GetThreadAns(thread int64) (map[int64](*taps.Thread), error)
+	GetThreadAns(thread int64) map[int64]*taps.Thread
 
 	// GetThreadChildrenByStkIter returns the smallest map of threads that contains all descendants of `threads` which
 	// have `stk` as their stakeholder in `iter`.

@@ -105,11 +105,7 @@ func TestThreadHierAns(t *testing.T) {
 			db.NewThreadHierLink(ths[i-1].id, ths[i].id, "2020 Oct", 0, "example.com")
 		}
 	}
-	ans, errAns := db.GetThreadAns(ths[1].id)
-	if errAns != nil {
-		t.Errorf("Could not get thread ancestors: %v", errAns)
-		return
-	}
+	ans := db.GetThreadAns(ths[1].id)
 	if len(ans) != 2 {
 		t.Errorf("Expected 2 results; got %v", len(ans))
 	}

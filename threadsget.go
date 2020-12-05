@@ -210,15 +210,15 @@ func (db *mysqlDB) GetThreadDes(thread int64) map[int64]*taps.Thread {
 	return ths
 }
 
-func (db *mysqlDB) GetThreadAns(thread int64) (map[int64](*taps.Thread), error) {
-	thBtm, errBtm := db.GetThread(thread)
-	if errBtm != nil {
-		return nil, fmt.Errorf("Could not get bottom thread: %w", errBtm)
+func (db *mysqlDB) GetThreadAns(thread int64) map[int64]*taps.Thread {
+	thBtm, err := db.GetThread(thread)
+	if err != nil {
+		panic(fmt.Sprintf("Could not get bottom thread: %v", err))
 	}
 	ths := map[int64](*taps.Thread){
 		thBtm.ID: thBtm,
 	}
-	qr, errQry := db.conn.Query(fmt.Sprintf(`
+	qr, err := db.conn.Query(fmt.Sprintf(`
 	WITH   RECURSIVE ans (child, parent) AS
 	       (
 	       SELECT child
@@ -235,20 +235,20 @@ func (db *mysqlDB) GetThreadAns(thread int64) (map[int64](*taps.Thread), error) 
 	SELECT DISTINCT parent
 	FROM   ans
 	;`, thread))
-	if errQry != nil {
-		return nil, fmt.Errorf("Could not query for ancestor threads: %v", errQry)
+	if err != nil {
+		panic(fmt.Sprintf("Could not query for ancestor threads: %v", err))
 	}
 	defer qr.Close()
 	for qr.Next() {
 		var i int64
 		qr.Scan(&i)
-		th, errTh := db.GetThread(i)
-		if errTh != nil {
-			return nil, fmt.Errorf("Could not get ancestor thread: %v", errTh)
+		th, err := db.GetThread(i)
+		if err != nil {
+			panic(fmt.Sprintf("Could not get ancestor thread: %v", err))
 		}
 		ths[th.ID] = th
 	}
-	return ths, nil
+	return ths
 }
 
 func (db *mysqlDB) GetThreadChildrenByStkIter(threads []int64, stk, iter string) (map[int64](*taps.Thread), error) {
@@ -534,12 +534,7 @@ func (db *mysqlDB) GetThreadParentsForAnc(child, anc int64) (parents []*taps.Thr
 			err = fmt.Errorf("Could not scan parent id: %v", err)
 			return
 		}
-		var ans map[int64]*taps.Thread
-		ans, err = db.GetThreadAns(pid)
-		if err != nil {
-			err = fmt.Errorf("Could not get ancestors of %v: %v", pid, err)
-			return
-		}
+		ans := db.GetThreadAns(pid)
 		if th, ok := ans[anc]; ok {
 			parents = append(parents, th)
 		}
