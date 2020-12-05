@@ -64,7 +64,7 @@ func (db *mysqlDB) GetOrdBeforeForParent(parent int64, iter string, ord int) int
 	for qr.Next() {
 		err := qr.Scan(&max)
 		if err != nil {
-			panic(fmt.Errorf("Could not scan ord: %v", err))
+			return 0
 		}
 	}
 	return max
