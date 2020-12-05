@@ -37,29 +37,29 @@ func (db *mysqlDB) DeleteThreadHierLinkForStk(parent, child int64, stk string) e
 }
 */
 
-func (db *mysqlDB) GetOrdBeforeForStk(stk, iter string, ord int) (int, error) {
-	qr, errQry := db.conn.Query(fmt.Sprintf(`
+func (db *mysqlDB) GetOrdBeforeForStk(stk, iter string, ord int) int {
+	qr, err := db.conn.Query(fmt.Sprintf(`
 	SELECT MAX(ord) AS ord
 	FROM   threads_stakeholders
 	WHERE  stk = '%v'
 	  AND  ord < %v
 	  AND  iter = '%v'
 	;`, stk, ord, iter))
-	if errQry != nil {
-		return 0, fmt.Errorf("Could not query for previous thread order: %v", errQry)
+	if err != nil {
+		panic(fmt.Sprintf("Could not query for previous thread order: %v", err))
 	}
 	defer qr.Close()
 	max := 0
 	for qr.Next() {
-		errScn := qr.Scan(&max)
-		if errScn != nil {
-			return 0, nil
+		err = qr.Scan(&max)
+		if err != nil {
+			return 0
 		}
 	}
-	return max, nil
+	return max
 }
 
-func (db *mysqlDB) GetOrdAfterForStk(stk, iter string, ord int) (int, error) {
+func (db *mysqlDB) GetOrdAfterForStk(stk, iter string, ord int) int {
 	qr, err := db.conn.Query(fmt.Sprintf(`
 	SELECT MIN(ord) AS ord
 	FROM   threads_stakeholders
@@ -68,17 +68,17 @@ func (db *mysqlDB) GetOrdAfterForStk(stk, iter string, ord int) (int, error) {
 	  AND  iter = '%v'
 	;`, stk, ord, iter))
 	if err != nil {
-		return 0, fmt.Errorf("Could not query for thread order: %v", err)
+		panic(fmt.Sprintf("Could not query for thread order: %v", err))
 	}
 	defer qr.Close()
 	min := 0
 	for qr.Next() {
-		errScn := qr.Scan(&min)
-		if errScn != nil {
-			return math.MaxInt32, nil
+		err = qr.Scan(&min)
+		if err != nil {
+			return math.MaxInt32
 		}
 	}
-	return min, nil
+	return min
 }
 
 /*

@@ -62,11 +62,7 @@ func TestSetAndGetOrdBeforeForStk(t *testing.T) {
 		t.Errorf("Could not get thread B")
 		return
 	}
-	ob, errOB := db.GetOrdBeforeForStk(stks[0], "2020 Oct", th.Stks[stks[0]].Ord)
-	if errOB != nil {
-		t.Errorf("Could not get order before thread B: %v", errOB)
-		return
-	}
+	ob := db.GetOrdBeforeForStk(stks[0], "2020 Oct", th.Stks[stks[0]].Ord)
 	if ob != 4 {
 		t.Errorf("Expected order before to be 4, got %v", ob)
 		return

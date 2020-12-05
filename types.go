@@ -138,11 +138,11 @@ type DBInterface interface {
 
 	// GetOrdBeforeForStk returns the highest order of any thread with `stk` as a stakeholder in `iter`, thats lower
 	// than `ord`
-	GetOrdBeforeForStk(stk, iter string, ord int) (int, error)
+	GetOrdBeforeForStk(stk, iter string, ord int) int
 
 	// GetOrdAfterForStk returns the lowest order of any thread with `stk` as a stakeholder in `iter`, that's higher
 	// than `ord`
-	GetOrdAfterForStk(stk, iter string, ord int) (int, error)
+	GetOrdAfterForStk(stk, iter string, ord int) int
 
 	// GetChildrenByParentStkLinks gets all children of thread hier links for a `stk` where the parent is `parent`
 	//GetChildrenByParentStkLinks(parent int64, stk string) (children []int64, err error)
