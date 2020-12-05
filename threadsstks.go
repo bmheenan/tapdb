@@ -5,18 +5,18 @@ import (
 	"math"
 )
 
-func (db *mysqlDB) NewThreadStkLink(thread int64, stk, domain, iter string, ord int, toplvl bool, cost int) error {
-	_, errIn := db.conn.Exec(fmt.Sprintf(`
+func (db *mysqlDB) NewThreadStkLink(thread int64, stk, domain, iter string, ord int, cost int) {
+	_, err := db.conn.Exec(fmt.Sprintf(`
 	INSERT INTO threads_stakeholders
-	            (thread,  stk, domain, iter, ord, toplvl, cost)
-	VALUES      (    %v, '%v',   '%v', '%v',  %v,     %v,   %v)
-	;`, thread, stk, domain, iter, ord, toplvl, cost))
-	if errIn != nil {
-		return fmt.Errorf("Could not add stakeholder %v to thread %v: %v", stk, thread, errIn)
+	            (thread,  stk, domain, iter, ord, cost)
+	VALUES      (    %v, '%v',   '%v', '%v',  %v,   %v)
+	;`, thread, stk, domain, iter, ord, cost))
+	if err != nil {
+		panic(fmt.Sprintf("Could not add stakeholder %v to thread %v: %v", stk, thread, err))
 	}
-	return nil
 }
 
+/*
 func (db *mysqlDB) NewThreadHierLinkForStk(parent, child int64, stk, domain string) error {
 	_, err := db.conn.Exec(fmt.Sprintf(`
 	INSERT INTO threads_stakeholders_hierarchy
@@ -35,6 +35,7 @@ func (db *mysqlDB) DeleteThreadHierLinkForStk(parent, child int64, stk string) e
 	;`, parent, child, stk))
 	return err
 }
+*/
 
 func (db *mysqlDB) GetOrdBeforeForStk(stk, iter string, ord int) (int, error) {
 	qr, errQry := db.conn.Query(fmt.Sprintf(`
@@ -80,6 +81,7 @@ func (db *mysqlDB) GetOrdAfterForStk(stk, iter string, ord int) (int, error) {
 	return min, nil
 }
 
+/*
 func (db *mysqlDB) GetChildrenByParentStkLinks(parent int64, stk string) (children []int64, err error) {
 	qr, errQr := db.conn.Query(fmt.Sprintf(`
 	SELECT child
@@ -129,6 +131,7 @@ func (db *mysqlDB) GetParentsByChildStkLinks(child int64, stk string) (parents [
 	}
 	return
 }
+*/
 
 func (db *mysqlDB) SetOrdForStk(thread int64, stk string, ord int) error {
 	_, err := db.conn.Exec(fmt.Sprintf(`

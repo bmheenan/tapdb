@@ -3,8 +3,8 @@ package tapdb
 import "fmt"
 
 // Make the db tables if they don't already exist
-func (db *mysqlDB) makeTables() error {
-	_, errStk := db.conn.Exec(`
+func (db *mysqlDB) makeTables() {
+	_, err := db.conn.Exec(`
 	CREATE TABLE IF NOT EXISTS stakeholders (
 		email   VARCHAR(255) NOT NULL,
 		domain  VARCHAR(255) NOT NULL,
@@ -16,11 +16,11 @@ func (db *mysqlDB) makeTables() error {
 		PRIMARY KEY (email),
 		INDEX (domain)
 	);`)
-	if errStk != nil {
-		return fmt.Errorf("Could not create stakeholders table: %v", errStk)
+	if err != nil {
+		panic(fmt.Sprintf("Could not create stakeholders table: %v", err))
 	}
 
-	_, errStkH := db.conn.Exec(`
+	_, err = db.conn.Exec(`
 	CREATE TABLE IF NOT EXISTS stakeholders_hierarchy (
 		parent VARCHAR(255) NOT NULL,
 		child  VARCHAR(255) NOT NULL,
@@ -32,11 +32,11 @@ func (db *mysqlDB) makeTables() error {
 		INDEX (child),
 		INDEX (domain)
 	);`)
-	if errStkH != nil {
-		return fmt.Errorf("Could not create stakeholders_heirarchy table: %v", errStkH)
+	if err != nil {
+		panic(fmt.Sprintf("Could not create stakeholders_heirarchy table: %v", err))
 	}
 
-	_, errTh := db.conn.Exec(`
+	_, err = db.conn.Exec(`
 	CREATE TABLE IF NOT EXISTS threads (
 		id          INT              NOT NULL AUTO_INCREMENT,
 		name        VARCHAR(255)     NOT NULL,
@@ -54,11 +54,11 @@ func (db *mysqlDB) makeTables() error {
 		INDEX (iter),
 		INDEX (state)
 	);`)
-	if errTh != nil {
-		return fmt.Errorf("Could not create threads table: %v", errTh)
+	if err != nil {
+		panic(fmt.Sprintf("Could not create threads table: %v", err))
 	}
 
-	_, errThH := db.conn.Exec(`
+	_, err = db.conn.Exec(`
 	CREATE TABLE IF NOT EXISTS threads_hierarchy (
 		parent INT          NOT NULL,
 		child  INT          NOT NULL,
@@ -73,11 +73,11 @@ func (db *mysqlDB) makeTables() error {
 		INDEX (domain),
 		INDEX (iter)
 	);`)
-	if errThH != nil {
-		return fmt.Errorf("Could not create threads_hierarchy table: %v", errThH)
+	if err != nil {
+		panic(fmt.Sprintf("Could not create threads_hierarchy table: %v", err))
 	}
 
-	_, errThStk := db.conn.Exec(`
+	_, err = db.conn.Exec(`
 		CREATE TABLE IF NOT EXISTS threads_stakeholders (
 			thread INT          NOT NULL,
 			stk    VARCHAR(255) NOT NULL,
@@ -91,30 +91,9 @@ func (db *mysqlDB) makeTables() error {
 			INDEX (thread),
 			INDEX (stk),
 			INDEX (domain),
-			INDEX (iter),
-			INDEX (toplvl)
+			INDEX (iter)
 		);`)
-	if errThStk != nil {
-		return fmt.Errorf("Could not create threads_stakeholders table: %v", errThStk)
+	if err != nil {
+		panic(fmt.Sprintf("Could not create threads_stakeholders table: %v", err))
 	}
-
-	_, errThStkH := db.conn.Exec(`
-		CREATE TABLE IF NOT EXISTS threads_stakeholders_hierarchy (
-			parent INT          NOT NULL,
-			child  INT          NOT NULL,
-			stk    VARCHAR(255) NOT NULL,
-			domain VARCHAR(255) NOT NULL,
-			PRIMARY KEY (parent, child, stk),
-			FOREIGN KEY (parent) REFERENCES threads(id),
-			FOREIGN KEY (child) REFERENCES threads(id),
-			FOREIGN KEY (stk) REFERENCES stakeholders(email),
-			INDEX (parent),
-			INDEX (child),
-			INDEX (stk),
-			INDEX (domain)
-		);`)
-	if errThStkH != nil {
-		return fmt.Errorf("Could not create threads_stakeholders_hierarchy table: %v", errThStkH)
-	}
-	return nil
 }

@@ -3,65 +3,74 @@ package tapdb
 import (
 	"fmt"
 	"math"
+
+	"github.com/go-sql-driver/mysql"
 )
 
-func (db *mysqlDB) NewThread(name, domain, owner, iter, state string, percentile float64, cost int) (int64, error) {
-	res, errIn := db.conn.Exec(fmt.Sprintf(`
+func (db *mysqlDB) NewThread(name, domain, owner, iter, state string, percentile float64, cost int) int64 {
+	res, err := db.conn.Exec(fmt.Sprintf(`
 	INSERT INTO threads
 	            (name, domain, owner, iter, state, percentile, costdir, costtot)
 	VALUES      ('%v',   '%v',  '%v', '%v',  '%v',         %v,      %v,      %v)
 	;`, name, domain, owner, iter, state, percentile, cost, cost))
-	if errIn != nil {
-		return 0, fmt.Errorf("Could not insert new thread into db: %v", errIn)
+	if err != nil {
+		panic(fmt.Sprintf("Could not insert new thread into db: %v", err))
 	}
-	id, errID := res.LastInsertId()
-	if errID != nil {
-		return 0, fmt.Errorf("Could not get id of inserted thread: %v", errID)
+	id, err := res.LastInsertId()
+	if err != nil {
+		panic(fmt.Sprintf("Could not get id of inserted thread: %v", err))
 	}
-	return id, nil
+	return id
 }
 
-func (db *mysqlDB) NewThreadHierLink(parent, child int64, iter string, ord int, domain string) error {
+func (db *mysqlDB) NewThreadHierLink(parent, child int64, iter string, ord int, domain string) {
 	_, err := db.conn.Exec(fmt.Sprintf(`
 	INSERT INTO threads_hierarchy
 	            (parent, child, domain, iter, ord)
 	VALUES      (    %v,    %v,   '%v', '%v',  %v)
 	;`, parent, child, domain, iter, ord))
-	return err
+	if err != nil {
+		sqlerr, ok := err.(*mysql.MySQLError)
+		if !ok || sqlerr.Number != 1062 { // 1062 = duplicate entry. If they're already linked, don't error
+			panic(fmt.Sprintf("Could not insert row linking threads: %v", err))
+		}
+	}
 }
 
-func (db *mysqlDB) DeleteThreadHierLink(parent, child int64) error {
+func (db *mysqlDB) DeleteThreadHierLink(parent, child int64) {
 	_, err := db.conn.Exec(fmt.Sprintf(`
 	DELETE FROM threads_hierarchy
 	WHERE       parent = %v
 	  AND       child = %v
 	;`, parent, child))
-	return err
+	if err != nil {
+		panic(fmt.Sprintf("Could not delete thread hierarchy link: %v", err))
+	}
 }
 
-func (db *mysqlDB) GetOrdBeforeForParent(parent int64, iter string, ord int) (int, error) {
-	qr, errQr := db.conn.Query(fmt.Sprintf(`
+func (db *mysqlDB) GetOrdBeforeForParent(parent int64, iter string, ord int) int {
+	qr, err := db.conn.Query(fmt.Sprintf(`
 	SELECT MAX(ord) AS ord
 	FROM   threads_hierarchy
 	WHERE  parent = %v
 	  AND  ord < %v
 	  AND  iter = '%v'
 	;`, parent, ord, iter))
-	if errQr != nil {
-		return 0, fmt.Errorf("Could not query for thread order: %v", errQr)
+	if err != nil {
+		panic(fmt.Sprintf("Could not query for thread order: %v", err))
 	}
 	defer qr.Close()
 	max := 0
 	for qr.Next() {
-		errScn := qr.Scan(&max)
-		if errScn != nil {
-			return 0, nil
+		err := qr.Scan(&max)
+		if err != nil {
+			panic(fmt.Errorf("Could not scan ord: %v", err))
 		}
 	}
-	return max, nil
+	return max
 }
 
-func (db *mysqlDB) GetOrdAfterForParent(parent int64, iter string, ord int) (int, error) {
+func (db *mysqlDB) GetOrdAfterForParent(parent int64, iter string, ord int) int {
 	qr, err := db.conn.Query(fmt.Sprintf(`
 	SELECT MIN(ord) AS ord
 	FROM   threads_hierarchy
@@ -70,53 +79,61 @@ func (db *mysqlDB) GetOrdAfterForParent(parent int64, iter string, ord int) (int
 	  AND  iter = '%v'
 	;`, parent, ord, iter))
 	if err != nil {
-		return 0, fmt.Errorf("Could not query for thread order: %v", err)
+		panic(fmt.Sprintf("Could not query for thread order: %v", err))
 	}
 	defer qr.Close()
 	min := 0
 	for qr.Next() {
 		err = qr.Scan(&min)
 		if err != nil {
-			return math.MaxInt32, nil
+			return math.MaxInt32
 		}
 	}
-	return min, nil
+	return min
 }
 
-func (db *mysqlDB) SetOrdForParent(thread, parent int64, ord int) error {
+func (db *mysqlDB) SetOrdForParent(thread, parent int64, ord int) {
 	_, err := db.conn.Exec(fmt.Sprintf(`
 	UPDATE threads_hierarchy
 	SET    ord = %v
 	WHERE  child = %v
 	  AND  parent = %v
 	;`, ord, thread, parent))
-	return err
+	if err != nil {
+		panic(fmt.Sprintf("Could not set ord: %v", err))
+	}
 }
 
-func (db *mysqlDB) SetCostTot(thread int64, cost int) error {
+func (db *mysqlDB) SetCostTot(thread int64, cost int) {
 	_, err := db.conn.Exec(fmt.Sprintf(`
 	UPDATE threads
 	SET    costtot = %v
 	WHERE  id = %v
 	;`, cost, thread))
-	return err
+	if err != nil {
+		panic(fmt.Sprintf("Could not set cost: %v", err))
+	}
 }
 
-func (db *mysqlDB) SetIter(thread int64, iter string) error {
+func (db *mysqlDB) SetIter(thread int64, iter string) {
 	_, err := db.conn.Exec(fmt.Sprintf(`
 	UPDATE threads
 	SET    iter = '%v'
 	WHERE  id = %v
 	;`, iter, thread))
-	return err
+	if err != nil {
+		panic(fmt.Sprintf("Could not set iter: %v", err))
+	}
 }
 
-func (db *mysqlDB) SetIterForParent(parent, child int64, iter string) error {
+func (db *mysqlDB) SetIterForParent(parent, child int64, iter string) {
 	_, err := db.conn.Exec(fmt.Sprintf(`
 	UPDATE threads_hierarchy
 	SET    iter = '%v'
 	WHERE  parent = %v
 	  AND  child = %v
 	;`, iter, parent, child))
-	return err
+	if err != nil {
+		panic(fmt.Sprintf("Could not set iter for parent: %v", err))
+	}
 }

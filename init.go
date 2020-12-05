@@ -40,10 +40,7 @@ func Init(user, pass, connName string) (DBInterface, error) {
 	if crDBconn.Ping() == driver.ErrBadConn {
 		return &mysqlDB{}, errors.New("Could not establish a good connection to db: ping returned bad connection")
 	}
-	errMkDB := makeDB(crDBconn, dbName)
-	if errMkDB != nil {
-		return &mysqlDB{}, fmt.Errorf("Could not make database: %v", errMkDB)
-	}
+	makeDB(crDBconn, dbName)
 	crDBconn.Close()
 	// Second persistent connection specifies the DB now that we just created it. Subsequent queries will already be
 	// using the db this way
@@ -55,10 +52,7 @@ func Init(user, pass, connName string) (DBInterface, error) {
 	if db.conn.Ping() == driver.ErrBadConn {
 		return &mysqlDB{}, errors.New("Could not establish a good connection to db: ping returned bad connection")
 	}
-	errMkTbls := db.makeTables()
-	if errMkTbls != nil {
-		return &mysqlDB{}, fmt.Errorf("Could not make db tables: %v", errMkTbls)
-	}
+	db.makeTables()
 	return db, nil
 }
 

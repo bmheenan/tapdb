@@ -9,16 +9,8 @@ import (
 )
 
 func TestNewAndGetThread(t *testing.T) {
-	db, stks, errSetup := setupWithStks()
-	if errSetup != nil {
-		t.Errorf("%v", fmt.Errorf("Could not set up test: %v", errSetup))
-		return
-	}
-	id, errIn := db.NewThread("Test thread", "example.com", stks[0], "2020 Oct", "not started", 1, 10)
-	if errIn != nil {
-		t.Errorf("Could not insert new thread: %v", errIn)
-		return
-	}
+	db, stks := setupWithStks()
+	id := db.NewThread("Test thread", "example.com", stks[0], "2020 Oct", "not started", 1, 10)
 	th, errGet := db.GetThread(id)
 	if errGet != nil {
 		t.Errorf("Could not get thread: %v", errGet)
@@ -31,11 +23,7 @@ func TestNewAndGetThread(t *testing.T) {
 }
 
 func TestThreadHierDes(t *testing.T) {
-	db, stks, errSetup := setupWithStks()
-	if errSetup != nil {
-		t.Errorf("%v", fmt.Errorf("Could not setup test: %v", errSetup))
-		return
-	}
+	db, stks := setupWithStks()
 	ths := []struct {
 		name string
 		cost int
@@ -59,25 +47,12 @@ func TestThreadHierDes(t *testing.T) {
 		},
 	}
 	for i := 0; i < len(ths); i++ {
-		var errNew error
-		ths[i].id, errNew = db.NewThread(ths[i].name, "example.com", stks[0], "2020 Oct", "not started", 1, ths[i].cost)
-		if errNew != nil {
-			t.Errorf("Could not insert thread %v: %v", ths[i], errNew)
-			return
-		}
+		ths[i].id = db.NewThread(ths[i].name, "example.com", stks[0], "2020 Oct", "not started", 1, ths[i].cost)
 		if i > 0 {
-			errLnk := db.NewThreadHierLink(ths[i-1].id, ths[i].id, "2020 Oct", 0, "example.com")
-			if errLnk != nil {
-				t.Errorf("Could not link threads: %v", errLnk)
-				return
-			}
+			db.NewThreadHierLink(ths[i-1].id, ths[i].id, "2020 Oct", 0, "example.com")
 		}
 	}
-	des, errDes := db.GetThreadDes(ths[1].id)
-	if errDes != nil {
-		t.Errorf("Could not get thread descendants: %v", errDes)
-		return
-	}
+	des := db.GetThreadDes(ths[1].id)
 	if len(des) != 3 {
 		t.Errorf("Expected 3 results; got %v", len(des))
 	}
@@ -91,12 +66,17 @@ func TestThreadHierDes(t *testing.T) {
 	}
 }
 
-func TestThreadHierAns(t *testing.T) {
-	db, stks, errSetup := setupWithStks()
-	if errSetup != nil {
-		t.Errorf("%v", fmt.Errorf("Could not setup test: %v", errSetup))
-		return
+func TestThreadHierLinkMultipleTimes(t *testing.T) {
+	db, stks := setupWithStks()
+	ida := db.NewThread("A", "example.com", stks[0], "2020-12 Dec", string(taps.NotStarted), 1, 1)
+	idb := db.NewThread("B", "example.com", stks[0], "2020-12 Dec", string(taps.NotStarted), 1, 1)
+	for i := 0; i < 2; i++ {
+		db.NewThreadHierLink(ida, idb, "2020-12 Dec", 0, "example.com")
 	}
+}
+
+func TestThreadHierAns(t *testing.T) {
+	db, stks := setupWithStks()
 	ths := []struct {
 		name string
 		cost int
@@ -120,18 +100,9 @@ func TestThreadHierAns(t *testing.T) {
 		},
 	}
 	for i := 0; i < len(ths); i++ {
-		var errNew error
-		ths[i].id, errNew = db.NewThread(ths[i].name, "example.com", stks[0], "2020 Oct", "not started", 1, ths[i].cost)
-		if errNew != nil {
-			t.Errorf("Could not insert thread %v: %v", ths[i], errNew)
-			return
-		}
+		ths[i].id = db.NewThread(ths[i].name, "example.com", stks[0], "2020 Oct", "not started", 1, ths[i].cost)
 		if i > 0 {
-			errLnk := db.NewThreadHierLink(ths[i-1].id, ths[i].id, "2020 Oct", 0, "example.com")
-			if errLnk != nil {
-				t.Errorf("Could not link threads: %v", errLnk)
-				return
-			}
+			db.NewThreadHierLink(ths[i-1].id, ths[i].id, "2020 Oct", 0, "example.com")
 		}
 	}
 	ans, errAns := db.GetThreadAns(ths[1].id)
@@ -153,16 +124,8 @@ func TestThreadHierAns(t *testing.T) {
 }
 
 func TestParentOrd(t *testing.T) {
-	db, stks, errSetup := setupWithStks()
-	if errSetup != nil {
-		t.Errorf("%v", fmt.Errorf("Could not setup test: %v", errSetup))
-		return
-	}
-	pid, errP := db.NewThread("P", "example.com", stks[0], "2020 Oct", "not started", 1, 1)
-	if errP != nil {
-		t.Errorf("Could not insert parent thread: %v", errP)
-		return
-	}
+	db, stks := setupWithStks()
+	pid := db.NewThread("P", "example.com", stks[0], "2020 Oct", "not started", 1, 1)
 	ths := map[string](*struct {
 		ord int
 		id  int64
@@ -178,37 +141,16 @@ func TestParentOrd(t *testing.T) {
 		},
 	}
 	for n, th := range ths {
-		var errNew error
-		ths[n].id, errNew = db.NewThread(n, "example.com", stks[0], "2020 Oct", "not started", 1, 1)
-		if errNew != nil {
-			t.Errorf("Could not insert thread %v: %v", n, errNew)
-			return
-		}
-		errLnk := db.NewThreadHierLink(pid, th.id, "2020 Oct", th.ord, "example.com")
-		if errLnk != nil {
-			t.Errorf("Could not make %v a child of P: %v", n, errLnk)
-			return
-		}
+		ths[n].id = db.NewThread(n, "example.com", stks[0], "2020 Oct", "not started", 1, 1)
+		db.NewThreadHierLink(pid, th.id, "2020 Oct", th.ord, "example.com")
 	}
-	ordBef, errOB := db.GetOrdBeforeForParent(pid, "2020 Oct", 10)
-	if errOB != nil {
-		t.Errorf("Could not get order before 10: %v", errOB)
-		return
-	}
+	ordBef := db.GetOrdBeforeForParent(pid, "2020 Oct", 10)
 	if ordBef != 5 {
 		t.Errorf("Expected order to be 5, got %v", ordBef)
 		return
 	}
-	errStOrd := db.SetOrdForParent(ths["a"].id, pid, 101)
-	if errStOrd != nil {
-		t.Errorf("Could not set order of thread: %v", errStOrd)
-		return
-	}
-	ordBef, errOB = db.GetOrdBeforeForParent(pid, "2020 Oct", math.MaxInt32)
-	if errOB != nil {
-		t.Errorf("Could not get order before 10: %v", errOB)
-		return
-	}
+	db.SetOrdForParent(ths["a"].id, pid, 101)
+	ordBef = db.GetOrdBeforeForParent(pid, "2020 Oct", math.MaxInt32)
 	if ordBef != 101 {
 		t.Errorf("Expected order to be 101, got %v", ordBef)
 		return
@@ -216,21 +158,9 @@ func TestParentOrd(t *testing.T) {
 }
 
 func TestSetCostTot(t *testing.T) {
-	db, stks, errSetup := setupWithStks()
-	if errSetup != nil {
-		t.Errorf("%v", fmt.Errorf("Could not setup test: %v", errSetup))
-		return
-	}
-	thID, errN := db.NewThread("Thread", "example.com", stks[0], "2020 Oct", string(taps.NotStarted), 1, 1)
-	if errN != nil {
-		t.Errorf("Could not create new thread: %v", errN)
-		return
-	}
-	errC := db.SetCostTot(thID, 10)
-	if errC != nil {
-		t.Errorf("Could not set total cost of thread: %v", errC)
-		return
-	}
+	db, stks := setupWithStks()
+	thID := db.NewThread("Thread", "example.com", stks[0], "2020 Oct", string(taps.NotStarted), 1, 1)
+	db.SetCostTot(thID, 10)
 	th, errTh := db.GetThread(thID)
 	if errTh != nil {
 		t.Errorf("Could not get thread: %v", errTh)
@@ -242,10 +172,10 @@ func TestSetCostTot(t *testing.T) {
 	}
 }
 
-func setupWithStks() (DBInterface, []string, error) {
-	db, errSetup := setupEmptyDB()
-	if errSetup != nil {
-		return nil, nil, errSetup
+func setupWithStks() (DBInterface, []string) {
+	db, err := setupEmptyDB()
+	if err != nil {
+		panic(err)
 	}
 	es := []string{
 		"a@example.com",
@@ -253,10 +183,10 @@ func setupWithStks() (DBInterface, []string, error) {
 		"c@example.com",
 	}
 	for _, e := range es {
-		errStk := db.NewStk(e, "example.com", "Stakeholder "+e, "STK", "#ffffff", "#000000", "monthly")
-		if errStk != nil {
-			return nil, nil, fmt.Errorf("Error trying to insert new stakeholder: %v", errStk)
+		err := db.NewStk(e, "example.com", "Stakeholder "+e, "STK", "#ffffff", "#000000", "monthly")
+		if err != nil {
+			panic(fmt.Sprintf("Error trying to insert new stakeholder: %v", err))
 		}
 	}
-	return db, es, nil
+	return db, es
 }

@@ -1,7 +1,6 @@
 package tapdb
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/bmheenan/taps"
@@ -12,31 +11,11 @@ func TestThStkLinkAndGetHasStks(t *testing.T) {
 	if errSet != nil {
 		t.Errorf("Could not set up test: %v", errSet)
 	}
-	errL1 := db.NewThreadStkLink(ths["A"], stks[0], "example.com", "2020 Oct", 1, true, 1)
-	if errL1 != nil {
-		t.Errorf("Could not link thread and stakeholder: %v", errL1)
-		return
-	}
-	errL2 := db.NewThreadStkLink(ths["AA"], stks[0], "example.com", "2020 Oct", 1, true, 1)
-	if errL2 != nil {
-		t.Errorf("Could not link thread and stakeholder: %v", errL2)
-		return
-	}
-	errL3 := db.NewThreadStkLink(ths["AB"], stks[0], "example.com", "2020 Oct", 1, true, 1)
-	if errL3 != nil {
-		t.Errorf("Could not link thread and stakeholder: %v", errL3)
-		return
-	}
-	errL4 := db.NewThreadStkLink(ths["B"], stks[0], "example.com", "2020 Oct", 1, true, 1)
-	if errL4 != nil {
-		t.Errorf("Could not link thread and stakeholder: %v", errL4)
-		return
-	}
-	res, errR := db.GetThreadDes(ths["A"])
-	if errR != nil {
-		t.Errorf("Could not get thread descendants: %v", errR)
-		return
-	}
+	db.NewThreadStkLink(ths["A"], stks[0], "example.com", "2020 Oct", 1, 1)
+	db.NewThreadStkLink(ths["AA"], stks[0], "example.com", "2020 Oct", 1, 1)
+	db.NewThreadStkLink(ths["AB"], stks[0], "example.com", "2020 Oct", 1, 1)
+	db.NewThreadStkLink(ths["B"], stks[0], "example.com", "2020 Oct", 1, 1)
+	res := db.GetThreadDes(ths["A"])
 	if len(res) != 3 {
 		t.Errorf("Expected length to be 3, but it was %v", len(res))
 		return
@@ -116,10 +95,7 @@ func TestSetCostForStk(t *testing.T) {
 }
 
 func setupWithThreads() (DBInterface, []string, map[string](int64), error) {
-	db, stks, errSet := setupWithStks()
-	if errSet != nil {
-		return nil, nil, nil, errSet
-	}
+	db, stks := setupWithStks()
 	ths := map[string](int64){}
 	for _, t := range []struct {
 		n  string
@@ -145,45 +121,22 @@ func setupWithThreads() (DBInterface, []string, map[string](int64), error) {
 			ps: []string{},
 		},
 	} {
-		id, errN := db.NewThread(t.n, "example.com", stks[0], "2020 Oct", string(taps.NotStarted), 1, 1)
-		if errN != nil {
-			return nil, nil, nil, fmt.Errorf("Could not insert thread: %v", errN)
-		}
+		id := db.NewThread(t.n, "example.com", stks[0], "2020 Oct", string(taps.NotStarted), 1, 1)
 		ths[t.n] = id
 		for _, p := range t.ps {
-			errL := db.NewThreadHierLink(ths[p], ths[t.n], "2020 Oct", t.o, "example.com")
-			if errL != nil {
-				return nil, nil, nil, fmt.Errorf("Could not link parent %v with child %v: %v", p, t.n, errL)
-			}
+			db.NewThreadHierLink(ths[p], ths[t.n], "2020 Oct", t.o, "example.com")
 		}
 	}
 	return db, stks, ths, nil
 }
 
+/*
 func TestGetChildrenByParentStkLinks(t *testing.T) {
-	db, stks, errSet := setupWithStks()
-	if errSet != nil {
-		t.Errorf("Could not set up test: %v", errSet)
-		return
-	}
+	db, stks := setupWithStks()
 	ths := map[string]int64{}
 	for _, n := range []string{"A", "B", "C"} {
-		id, errN := db.NewThread(n, "example.com", stks[0], "2020 Oct", string(taps.NotStarted), 1, 1)
-		if errN != nil {
-			t.Errorf("Could not insert thread: %v", errN)
-			return
-		}
+		id := db.NewThread(n, "example.com", stks[0], "2020 Oct", string(taps.NotStarted), 1, 1)
 		ths[n] = id
-	}
-	errL1 := db.NewThreadHierLinkForStk(ths["A"], ths["B"], stks[0], "example.com")
-	if errL1 != nil {
-		t.Errorf("Could not link A and B: %v", errL1)
-		return
-	}
-	errL2 := db.NewThreadHierLinkForStk(ths["A"], ths["C"], stks[0], "example.com")
-	if errL2 != nil {
-		t.Errorf("Could not link A and C: %v", errL2)
-		return
 	}
 	chs, errG := db.GetChildrenByParentStkLinks(ths["A"], stks[0])
 	if errG != nil {
@@ -197,29 +150,11 @@ func TestGetChildrenByParentStkLinks(t *testing.T) {
 }
 
 func TestGetParentsByChildStkLinks(t *testing.T) {
-	db, stks, errSet := setupWithStks()
-	if errSet != nil {
-		t.Errorf("Could not set up test: %v", errSet)
-		return
-	}
+	db, stks := setupWithStks()
 	ths := map[string]int64{}
 	for _, n := range []string{"A", "B", "C"} {
-		id, errN := db.NewThread(n, "example.com", stks[0], "2020 Oct", string(taps.NotStarted), 1, 1)
-		if errN != nil {
-			t.Errorf("Could not insert thread: %v", errN)
-			return
-		}
+		id := db.NewThread(n, "example.com", stks[0], "2020 Oct", string(taps.NotStarted), 1, 1)
 		ths[n] = id
-	}
-	errL1 := db.NewThreadHierLinkForStk(ths["B"], ths["C"], stks[0], "example.com")
-	if errL1 != nil {
-		t.Errorf("Could not link B and C: %v", errL1)
-		return
-	}
-	errL2 := db.NewThreadHierLinkForStk(ths["A"], ths["C"], stks[0], "example.com")
-	if errL2 != nil {
-		t.Errorf("Could not link A and C: %v", errL2)
-		return
 	}
 	pas, errG := db.GetParentsByChildStkLinks(ths["C"], stks[0])
 	if errG != nil {
@@ -231,3 +166,4 @@ func TestGetParentsByChildStkLinks(t *testing.T) {
 		return
 	}
 }
+*/

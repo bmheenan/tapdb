@@ -1,7 +1,6 @@
 package tapdb
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -18,29 +17,10 @@ func setupEmptyDB() (DBInterface, error) {
 	if errS != nil {
 		return &mysqlDB{}, errS
 	}
-	errThStkH := db.ClearThreadStkHierLinks("example.com")
-	if errThStkH != nil {
-		return &mysqlDB{}, fmt.Errorf("Could not clear threads/stakeholders heirarchy links: %v", errThStkH)
-	}
-	errThStk := db.ClearThreadStkLinks("example.com")
-	if errThStk != nil {
-		return &mysqlDB{}, fmt.Errorf("Could not clear threads/stakeholders links: %v", errThStk)
-	}
-	errThH := db.ClearThreadHierLinks("example.com")
-	if errThH != nil {
-		return &mysqlDB{}, fmt.Errorf("Could not clear threads heirarchy links: %v", errThH)
-	}
-	errTh := db.ClearThreads("example.com")
-	if errTh != nil {
-		return &mysqlDB{}, fmt.Errorf("Could not clear threads: %v", errTh)
-	}
-	errStkH := db.ClearStkHierLinks("example.com")
-	if errStkH != nil {
-		return &mysqlDB{}, fmt.Errorf("Could not clear stakeholders heirarchy: %v", errStkH)
-	}
-	errStk := db.ClearStks("example.com")
-	if errStk != nil {
-		return &mysqlDB{}, fmt.Errorf("Could not clear stakeholders: %v", errStk)
-	}
+	db.ClearThreadStkLinks("example.com")
+	db.ClearThreadHierLinks("example.com")
+	db.ClearThreads("example.com")
+	db.ClearStkHierLinks("example.com")
+	db.ClearStks("example.com")
 	return db, nil
 }

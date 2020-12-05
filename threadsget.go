@@ -2,7 +2,6 @@ package tapdb
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 
 	"github.com/bmheenan/taps"
@@ -114,21 +113,21 @@ func (db *mysqlDB) GetThread(thread int64) (*taps.Thread, error) {
 	return nil, fmt.Errorf("No thread found with id %v: %w", thread, ErrNotFound)
 }
 
-func (db *mysqlDB) GetThreadsByStkIter(stk, iter string) ([](*taps.Thread), error) {
+func (db *mysqlDB) GetThreadsByStkIter(stk, iter string) []*taps.Thread {
 	return db.getThreadsByStkPaIter(0, stk, iter)
 }
 
-func (db *mysqlDB) GetThreadsByParentIter(parent int64, iter string) ([](*taps.Thread), error) {
+func (db *mysqlDB) GetThreadsByParentIter(parent int64, iter string) []*taps.Thread {
 	return db.getThreadsByStkPaIter(parent, "", iter)
 }
 
-func (db *mysqlDB) getThreadsByStkPaIter(parent int64, stk, iter string) ([](*taps.Thread), error) {
+func (db *mysqlDB) getThreadsByStkPaIter(parent int64, stk, iter string) []*taps.Thread {
 	var (
-		qr    *sql.Rows
-		errQr error
+		qr  *sql.Rows
+		err error
 	)
 	if stk != "" {
-		qr, errQr = db.conn.Query(fmt.Sprintf(`
+		qr, err = db.conn.Query(fmt.Sprintf(`
 		SELECT   thread
 		FROM     threads_stakeholders
 		WHERE    stk = '%v'
@@ -136,7 +135,7 @@ func (db *mysqlDB) getThreadsByStkPaIter(parent int64, stk, iter string) ([](*ta
 		ORDER BY ord
 		;`, stk, iter))
 	} else if parent != 0 {
-		qr, errQr = db.conn.Query(fmt.Sprintf(`
+		qr, err = db.conn.Query(fmt.Sprintf(`
 		SELECT   child
 		FROM     threads_hierarchy
 		WHERE    parent = %v
@@ -144,41 +143,41 @@ func (db *mysqlDB) getThreadsByStkPaIter(parent int64, stk, iter string) ([](*ta
 		ORDER BY ord
 		;`, parent, iter))
 	} else {
-		return nil, errors.New("stk must != '' or parent must != 0")
+		panic("stk must != '' or parent must != 0")
 	}
-	if errQr != nil {
-		return nil, fmt.Errorf("Could not query for threads: %v", errQr)
+	if err != nil {
+		panic(fmt.Sprintf("Could not query for threads: %v", err))
 	}
 	defer qr.Close()
 	ids := []int64{}
 	for qr.Next() {
 		var id int64
-		errScn := qr.Scan(&id)
-		if errScn != nil {
-			return nil, fmt.Errorf("Could not scan id: %v", errScn)
+		err = qr.Scan(&id)
+		if err != nil {
+			panic(fmt.Sprintf("Could not scan id: %v", err))
 		}
 		ids = append(ids, id)
 	}
 	ths := [](*taps.Thread){}
 	for _, id := range ids {
-		th, errTh := db.GetThread(id)
-		if errTh != nil {
-			return nil, fmt.Errorf("Could not get thread %v: %v", id, errTh)
+		th, err := db.GetThread(id)
+		if err != nil {
+			panic(fmt.Sprintf("Could not get thread %v: %v", id, err))
 		}
 		ths = append(ths, th)
 	}
-	return ths, nil
+	return ths
 }
 
-func (db *mysqlDB) GetThreadDes(thread int64) (map[int64](*taps.Thread), error) {
-	thTop, errTop := db.GetThread(thread)
-	if errTop != nil {
-		return nil, fmt.Errorf("Could not get top thread: %w", errTop)
+func (db *mysqlDB) GetThreadDes(thread int64) map[int64]*taps.Thread {
+	thTop, err := db.GetThread(thread)
+	if err != nil {
+		panic(fmt.Sprintf("Could not get top thread: %v", err))
 	}
 	ths := map[int64](*taps.Thread){
 		thTop.ID: thTop,
 	}
-	qr, errQry := db.conn.Query(fmt.Sprintf(`
+	qr, err := db.conn.Query(fmt.Sprintf(`
 	WITH   RECURSIVE des (child, parent) AS
 	       (
 	       SELECT child
@@ -195,20 +194,20 @@ func (db *mysqlDB) GetThreadDes(thread int64) (map[int64](*taps.Thread), error) 
 	SELECT DISTINCT child
 	FROM   des
 	;`, thread))
-	if errQry != nil {
-		return nil, fmt.Errorf("Could not query for descendant threads: %v", errQry)
+	if err != nil {
+		panic(fmt.Sprintf("Could not query for descendant threads: %v", err))
 	}
 	defer qr.Close()
 	for qr.Next() {
 		var i int64
 		qr.Scan(&i)
-		th, errTh := db.GetThread(i)
-		if errTh != nil {
-			return nil, fmt.Errorf("Could not get descendant thread: %v", errTh)
+		th, err := db.GetThread(i)
+		if err != nil {
+			panic(fmt.Sprintf("Could not get descendant thread: %v", err))
 		}
 		ths[th.ID] = th
 	}
-	return ths, nil
+	return ths
 }
 
 func (db *mysqlDB) GetThreadAns(thread int64) (map[int64](*taps.Thread), error) {
@@ -322,8 +321,24 @@ func (db *mysqlDB) getThChPaByStkIter(threads []int64, stk, iter, dir string) (m
 	return ret, nil
 }
 
-func (db *mysqlDB) GetThreadrowsByStkIter(stk, iter string) ([](*taps.Threadrow), error) {
-	qr, errQr := db.conn.Query(fmt.Sprintf(`
+func (db *mysqlDB) GetThreadrowsByStkIter(stk, iter string) (ths []taps.Threadrow) {
+	qr, err := db.conn.Query(fmt.Sprintf(`
+	WITH        RECURSIVE des (parent, child) AS
+	            (
+				SELECT h.parent
+				  ,    h.child
+				FROM   threads_hierarchy h
+				JOIN   threads_stakeholders s
+				  ON   h.parent = s.thread
+				WHERE  s.stk = '%v'
+				  AND  s.iter = '%v'
+				UNION ALL
+				SELECT h.parent
+				  ,    h.child
+				FROM   threads_hierarchy h
+				  JOIN des d
+				  ON   h.parent = d.child
+				)
 	SELECT      t.id
 	  ,         t.name
 	  ,         t.state
@@ -334,84 +349,87 @@ func (db *mysqlDB) GetThreadrowsByStkIter(stk, iter string) ([](*taps.Threadrow)
 	FROM        threads t
 	  JOIN      threads_stakeholders s
 	  ON        t.id = s.thread
-	  LEFT JOIN threads_stakeholders_hierarchy h
-	  ON        t.id = h.child
-	WHERE       h.child IS NULL
+	  LEFT JOIN des d
+	  ON        t.id = d.child
+	WHERE       d.child IS NULL
 	  AND       s.stk = '%v'
 	  AND       s.iter = '%v'
-	ORDER BY    t.iter
-	  ,         s.ord
-	;`, stk, iter))
-	if errQr != nil {
-		return nil, fmt.Errorf("Could not query for top level threads: %v", errQr)
+	ORDER BY    s.ord
+	;`, stk, iter, stk, iter))
+	if err != nil {
+		panic(fmt.Sprintf("Could not query for top level threadrows: %v", err))
 	}
 	defer qr.Close()
-	ths := [](*taps.Threadrow){}
+	ths = []taps.Threadrow{}
 	for qr.Next() {
-		th := &taps.Threadrow{}
-		var oEmail string
-		errScn := qr.Scan(&th.ID, &th.Name, &th.State, &th.Cost, &oEmail, &th.Iter, &th.Ord)
-		if errScn != nil {
-			return nil, fmt.Errorf("Could not scan top level thread: %v", errScn)
+		th := taps.Threadrow{}
+		oe := ""
+		err = qr.Scan(&th.ID, &th.Name, &th.State, &th.Cost, &oe, &th.Iter, &th.Ord)
+		if err != nil {
+			panic(fmt.Sprintf("Could not scan threadrows: %v", err))
 		}
-		tOwner, errO := db.GetStk(oEmail)
-		if errO != nil {
-			return nil, fmt.Errorf("Could not get stakeholder from email %v: %v", oEmail, errO)
+		o, err := db.GetStk(oe)
+		if err != nil {
+			panic(fmt.Sprintf("Could not get stakeholder for owner of thread: %v", err))
 		}
-		th.Owner = *tOwner
-		errDes := db.fillThreadrowDesByStkIter(th, stk, iter)
-		if errDes != nil {
-			return nil, fmt.Errorf("Could not fill decendants of %v: %v", th.Name, errDes)
-		}
+		th.Owner = *o
+		db.fillThreadrowDesByStkIter(th.ID, &th.Children, stk, iter)
+		// TODO sort th.Children by ord
 		ths = append(ths, th)
 	}
-	return ths, nil
+	return ths
 }
 
-func (db *mysqlDB) fillThreadrowDesByStkIter(parent *taps.Threadrow, stk, iter string) error {
-	qr, errQr := db.conn.Query(fmt.Sprintf(`
-	SELECT   h.child
-	  ,      t.name
-	  ,      t.state
-	  ,      s.cost
-	  ,      t.owner
-	  ,      t.iter
-	  ,      s.ord
-	FROM     threads_stakeholders_hierarchy h
-	  JOIN   threads t
-	  ON     h.child = t.id
-	  JOIN   threads_stakeholders s
-	  ON     h.child = s.thread
-	    AND  h.stk = s.stk 
-	WHERE    h.parent = %v
-	  AND    h.stk = '%v'
-	  AND    s.iter = '%v'
-	ORDER BY t.iter
-	  ,      s.ord
-	;`, parent.ID, stk, iter))
-	if errQr != nil {
-		return fmt.Errorf("Could not query for children: %v", errQr)
+func (db *mysqlDB) fillThreadrowDesByStkIter(paID int64, children *[]taps.Threadrow, stk, iter string) {
+	qr, err := db.conn.Query(fmt.Sprintf(`
+	SELECT      t.id
+	  ,         t.name
+	  ,         t.state
+	  ,         t.owner
+	  ,         t.iter
+	  ,         s.stk
+	  ,         s.iter
+	  ,         s.cost
+	  ,         s.ord
+	FROM        threads_hierarchy h
+	  JOIN      threads t
+	  ON        h.child = t.id
+	  LEFT JOIN threads_stakeholders s
+	  ON        t.id = s.thread
+	WHERE       h.parent = %v
+	ORDER BY    s.ord
+	;`, paID))
+	if err != nil {
+		panic(fmt.Sprintf("Could not query for thread children: %v", err))
 	}
 	defer qr.Close()
 	for qr.Next() {
 		th := taps.Threadrow{}
-		var oEmail string
-		errScn := qr.Scan(&th.ID, &th.Name, &th.State, &th.Cost, &oEmail, &th.Iter, &th.Ord)
-		if errScn != nil {
-			return fmt.Errorf("Could not scan thread: %v", errScn)
+		var (
+			oEmail string
+			sEmail,
+			sIter sql.NullString
+			sCost,
+			sOrd sql.NullInt32
+		)
+		err := qr.Scan(&th.ID, &th.Name, &th.State, &oEmail, &th.Iter, &sEmail, &sIter, &sCost, &sOrd)
+		if err != nil {
+			panic(fmt.Sprintf("Could not scan thread: %v", err))
 		}
-		thO, errO := db.GetStk(oEmail)
-		if errO != nil {
-			return fmt.Errorf("Could not get stakeholder from email %v: %v", oEmail, errO)
+		if sEmail.String == stk && sIter.String == iter {
+			owner, err := db.GetStk(oEmail)
+			if err != nil {
+				panic(fmt.Sprintf("Could not get stakeholder from email %v: %v", oEmail, err))
+			}
+			th.Owner = *owner
+			th.Cost = int(sCost.Int32)
+			th.Ord = int(sOrd.Int32)
+			db.fillThreadrowDesByStkIter(th.ID, &th.Children, stk, iter)
+			*children = append(*children, th)
+		} else {
+			db.fillThreadrowDesByStkIter(th.ID, children, stk, iter)
 		}
-		th.Owner = *thO
-		errDes := db.fillThreadrowDesByStkIter(&th, stk, iter)
-		if errDes != nil {
-			return fmt.Errorf("Could not fill decendants of %v: %v", th.Name, errDes)
-		}
-		parent.Children = append(parent.Children, th)
 	}
-	return nil
 }
 
 func (db *mysqlDB) GetThreadrowsByParentIter(parent int64, iter string) ([](*taps.Threadrow), error) {
