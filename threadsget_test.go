@@ -169,11 +169,7 @@ func TestGetThreadrowsByParentIter(t *testing.T) {
 		t.Errorf("Could not set up test: %v", errSet)
 		return
 	}
-	res, errG := db.GetThreadrowsByParentIter(ths["A"], "2020 Oct")
-	if errG != nil {
-		t.Errorf("Could not get threadrows for thread A and iteration 2020 Oct: %v", errG)
-		return
-	}
+	res := db.GetThreadrowsByParentIter(ths["A"], "2020 Oct")
 	if len(res) != 2 {
 		t.Errorf("Expected 2 threads but got %v", len(res))
 		return

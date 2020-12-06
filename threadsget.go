@@ -432,8 +432,8 @@ func (db *mysqlDB) fillThreadrowDesByStkIter(paID int64, children *[]taps.Thread
 	}
 }
 
-func (db *mysqlDB) GetThreadrowsByParentIter(parent int64, iter string) ([](*taps.Threadrow), error) {
-	qr, errQr := db.conn.Query(fmt.Sprintf(`
+func (db *mysqlDB) GetThreadrowsByParentIter(parent int64, iter string) []taps.Threadrow {
+	qr, err := db.conn.Query(fmt.Sprintf(`
 	SELECT   t.id
 	  ,      t.name
 	  ,      t.state
@@ -448,30 +448,30 @@ func (db *mysqlDB) GetThreadrowsByParentIter(parent int64, iter string) ([](*tap
 	  AND    h.iter = '%v'
 	ORDER BY h.ord
 	;`, parent, iter))
-	if errQr != nil {
-		return nil, fmt.Errorf("Could not query for child threads of %v: %v", parent, errQr)
+	if err != nil {
+		panic(fmt.Sprintf("Could not query for child threads of %v: %v", parent, err))
 	}
 	defer qr.Close()
-	ths := [](*taps.Threadrow){}
+	ths := []taps.Threadrow{}
 	for qr.Next() {
-		th := &taps.Threadrow{}
+		th := taps.Threadrow{}
 		var oEmail string
-		errScn := qr.Scan(&th.ID, &th.Name, &th.State, &th.Cost, &oEmail, &th.Iter, &th.Ord)
-		if errScn != nil {
-			return nil, fmt.Errorf("Could not scan child thread: %v", errScn)
+		err := qr.Scan(&th.ID, &th.Name, &th.State, &th.Cost, &oEmail, &th.Iter, &th.Ord)
+		if err != nil {
+			panic(fmt.Sprintf("Could not scan child thread: %v", err))
 		}
-		tOwner, errO := db.GetStk(oEmail)
-		if errO != nil {
-			return nil, fmt.Errorf("Could not get stakeholder from email %v: %v", oEmail, errO)
+		tOwner, err := db.GetStk(oEmail)
+		if err != nil {
+			panic(fmt.Sprintf("Could not get stakeholder from email %v: %v", oEmail, err))
 		}
 		th.Owner = *tOwner
-		errDes := db.fillThreadrowDes(th)
-		if errDes != nil {
-			return nil, fmt.Errorf("Could not fill decendants of %v: %v", th.Name, errDes)
+		err = db.fillThreadrowDes(&th)
+		if err != nil {
+			panic(fmt.Sprintf("Could not fill decendants of %v: %v", th.Name, err))
 		}
 		ths = append(ths, th)
 	}
-	return ths, nil
+	return ths
 }
 
 func (db *mysqlDB) fillThreadrowDes(parent *taps.Threadrow) error {

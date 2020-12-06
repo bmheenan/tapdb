@@ -115,7 +115,7 @@ type DBInterface interface {
 
 	// GetThreadrowsByParentIter returns a hierarchical, ordered array of Threadrows that are descendants of `parent`
 	// in `iter`
-	GetThreadrowsByParentIter(parent int64, iter string) ([](*taps.Threadrow), error)
+	GetThreadrowsByParentIter(parent int64, iter string) []taps.Threadrow
 
 	// GetThreadrowsByChild returns all threads that are direct parents of `child`
 	GetThreadrowsByChild(child int64) ([](*taps.Threadrow), error)
