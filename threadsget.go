@@ -3,6 +3,7 @@ package tapdb
 import (
 	"database/sql"
 	"fmt"
+	"sort"
 
 	"github.com/bmheenan/taps"
 )
@@ -374,7 +375,9 @@ func (db *mysqlDB) GetThreadrowsByStkIter(stk, iter string) (ths []taps.Threadro
 		}
 		th.Owner = *o
 		db.fillThreadrowDesByStkIter(th.ID, &th.Children, stk, iter)
-		// TODO sort th.Children by ord
+		sort.Slice(th.Children, func(i, j int) bool {
+			return th.Children[i].Ord < th.Children[j].Ord
+		})
 		ths = append(ths, th)
 	}
 	return ths
@@ -425,6 +428,9 @@ func (db *mysqlDB) fillThreadrowDesByStkIter(paID int64, children *[]taps.Thread
 			th.Cost = int(sCost.Int32)
 			th.Ord = int(sOrd.Int32)
 			db.fillThreadrowDesByStkIter(th.ID, &th.Children, stk, iter)
+			sort.Slice(th.Children, func(i, j int) bool {
+				return th.Children[i].Ord < th.Children[j].Ord
+			})
 			*children = append(*children, th)
 		} else {
 			db.fillThreadrowDesByStkIter(th.ID, children, stk, iter)

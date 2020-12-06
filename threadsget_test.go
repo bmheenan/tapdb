@@ -223,6 +223,39 @@ func TestGetParentsOfChildThread(t *testing.T) {
 	}
 }
 
+func TestThreadrowByStkOrdering(t *testing.T) {
+	db, stks := setupWithStks()
+	ths := map[string]int64{}
+
+	ths["A"] = db.NewThread("A", "example.com", stks[0], "2020-12 Dec", "not started", 1, 1)
+	db.NewThreadStkLink(ths["A"], stks[0], "example.com", "2020-12 Dec", 1, 1)
+
+	ths["AA"] = db.NewThread("AA", "example.com", stks[0], "2020-12 Dec", "not started", 1, 1)
+	db.NewThreadHierLink(ths["A"], ths["AA"], "2020-12 Dec", 1, "example.com")
+
+	ths["AAA"] = db.NewThread("AAA", "example.com", stks[0], "2020-12 Dec", "not started", 1, 1)
+	db.NewThreadHierLink(ths["AA"], ths["AAA"], "2020-12 Dec", 1, "example.com")
+	db.NewThreadStkLink(ths["AAA"], stks[0], "example.com", "2020-12 Dec", 3, 1)
+
+	ths["AB"] = db.NewThread("AB", "example.com", stks[0], "2020-12 Dec", "not started", 1, 1)
+	db.NewThreadHierLink(ths["A"], ths["AB"], "2020-12 Dec", 2, "example.com")
+	db.NewThreadStkLink(ths["AB"], stks[0], "example.com", "2020-12 Dec", 2, 1)
+
+	res := db.GetThreadrowsByStkIter(stks[0], "2020-12 Dec")
+	if x, g := 1, len(res); x != g {
+		t.Fatalf("Expected length %v; got %v", x, g)
+	}
+	if x, g := 2, len(res[0].Children); x != g {
+		t.Fatalf("Expected length %v; got %v", x, g)
+	}
+	if x, g := "AB", res[0].Children[0].Name; x != g {
+		t.Fatalf("Expected first child %v; got %v", x, g)
+	}
+	if x, g := "AAA", res[0].Children[1].Name; x != g {
+		t.Fatalf("Expected second child %v; got %v", x, g)
+	}
+}
+
 func setupWithThreadsStks() (DBInterface, []string, map[string](int64), error) {
 	db, stks := setupWithStks()
 	errLStk := db.NewStkHierLink(stks[0], stks[1], "example.com")
