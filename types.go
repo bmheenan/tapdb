@@ -118,7 +118,7 @@ type DBInterface interface {
 	GetThreadrowsByParentIter(parent int64, iter string) []taps.Threadrow
 
 	// GetThreadrowsByChild returns all threads that are direct parents of `child`
-	GetThreadrowsByChild(child int64) ([](*taps.Threadrow), error)
+	GetThreadrowsByChild(child int64) []taps.Threadrow
 
 	// GetThreadParentsForAnc returns all parents of `child` that have ancestor `anc`
 	GetThreadParentsForAnc(child, anc int64) (parents []*taps.Thread, err error)

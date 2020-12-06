@@ -217,10 +217,7 @@ func TestGetParentsOfChildThread(t *testing.T) {
 		t.Errorf("Could not set up test: %v", err)
 		return
 	}
-	res, err := db.GetThreadrowsByChild(ths["AA"])
-	if err != nil {
-		t.Fatalf("Could not get parent threads: %v", err)
-	}
+	res := db.GetThreadrowsByChild(ths["AA"])
 	if x, g := 1, len(res); x != g {
 		t.Fatalf("Expected len %d; got %d", x, g)
 	}

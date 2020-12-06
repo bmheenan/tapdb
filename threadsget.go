@@ -542,7 +542,7 @@ func (db *mysqlDB) GetThreadParentsForAnc(child, anc int64) (parents []*taps.Thr
 	return
 }
 
-func (db *mysqlDB) GetThreadrowsByChild(child int64) (ths [](*taps.Threadrow), err error) {
+func (db *mysqlDB) GetThreadrowsByChild(child int64) []taps.Threadrow {
 	qr, err := db.conn.Query(fmt.Sprintf(`
 	SELECT h.parent
 	  ,    t.name
@@ -556,11 +556,10 @@ func (db *mysqlDB) GetThreadrowsByChild(child int64) (ths [](*taps.Threadrow), e
 	WHERE  h.child = '%v'
 	;`, child))
 	if err != nil {
-		err = fmt.Errorf("Could not get parents of %v: %v", child, err)
-		return
+		panic(fmt.Sprintf("Could not get parents of %v: %v", child, err))
 	}
 	defer qr.Close()
-	ths = [](*taps.Threadrow){}
+	ths := []taps.Threadrow{}
 	for qr.Next() {
 		var (
 			th     taps.Threadrow
@@ -568,16 +567,14 @@ func (db *mysqlDB) GetThreadrowsByChild(child int64) (ths [](*taps.Threadrow), e
 		)
 		err = qr.Scan(&th.ID, &th.Name, &th.State, &th.Cost, &oEmail, &th.Iter)
 		if err != nil {
-			err = fmt.Errorf("Could not scan thread: %v", err)
-			return
+			panic(fmt.Sprintf("Could not scan thread: %v", err))
 		}
 		thOwner, err := db.GetStk(oEmail)
 		if err != nil {
-			err = fmt.Errorf("Could not get owner from email: %v", err)
-			return nil, err
+			panic(fmt.Sprintf("Could not get owner from email: %v", err))
 		}
 		th.Owner = *thOwner
-		ths = append(ths, &th)
+		ths = append(ths, th)
 	}
-	return
+	return ths
 }
