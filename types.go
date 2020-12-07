@@ -85,6 +85,15 @@ type DBInterface interface {
 	// SetIterForParent sets the iteration of `child` in the context of `parent` to `iter`
 	SetIterForParent(parent, child int64, iter string)
 
+	// SetName sets the name of `thread` to `name`
+	SetName(thread int64, name string)
+
+	// SetDesc sets the description of `thread` to `desc`
+	SetDesc(thread int64, desc string)
+
+	// SetCostDir sets the direct cost of `thread` to `cost` (but does not update total cost)
+	SetCostDir(thread int64, cost int)
+
 	// threadsget.go
 
 	// GetThread returns the Thread with id matching `thread`
