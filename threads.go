@@ -137,3 +137,36 @@ func (db *mysqlDB) SetIterForParent(parent, child int64, iter string) {
 		panic(fmt.Sprintf("Could not set iter for parent: %v", err))
 	}
 }
+
+func (db *mysqlDB) SetName(thread int64, name string) {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	UPDATE threads
+	SET    name = '%v'
+	WHERE  id = %v
+	;`, name, thread))
+	if err != nil {
+		panic(fmt.Sprintf("Could not set name: %v", err))
+	}
+}
+
+func (db *mysqlDB) SetDesc(thread int64, desc string) {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	UPDATE threads
+	SET    desc = '%v'
+	WHERE  id = %v
+	;`, desc, thread))
+	if err != nil {
+		panic(fmt.Sprintf("Could not set description: %v", err))
+	}
+}
+
+func (db *mysqlDB) SetCostDir(thread int64, cost int) {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	UPDATE threads
+	SET    costdir = %v
+	WHERE  id = %v
+	;`, cost, thread))
+	if err != nil {
+		panic(fmt.Sprintf("Could not set cost: %v", err))
+	}
+}
