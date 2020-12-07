@@ -152,7 +152,7 @@ func (db *mysqlDB) SetName(thread int64, name string) {
 func (db *mysqlDB) SetDesc(thread int64, desc string) {
 	_, err := db.conn.Exec(fmt.Sprintf(`
 	UPDATE threads
-	SET    desc = '%v'
+	SET    description = '%v'
 	WHERE  id = %v
 	;`, desc, thread))
 	if err != nil {
