@@ -155,7 +155,7 @@ func TestParentOrd(t *testing.T) {
 
 func TestSetCostTot(t *testing.T) {
 	db, stks := setupWithStks()
-	thID := db.NewThread("Thread", "example.com", stks[0], "2020 Oct", string(taps.NotStarted), 1, 1)
+	thID := db.NewThread("Thread", "example.com", stks[0], "2020-10 Oct", string(taps.NotStarted), 1, 1)
 	db.SetCostTot(thID, 10)
 	th, errTh := db.GetThread(thID)
 	if errTh != nil {
@@ -165,6 +165,19 @@ func TestSetCostTot(t *testing.T) {
 	if th.CostTot != 10 {
 		t.Errorf("Expected CostTot to be 10, but it was %v", th.CostTot)
 		return
+	}
+}
+
+func TestSetState(t *testing.T) {
+	db, stks := setupWithStks()
+	id := db.NewThread("Thread", "example.com", stks[0], "2020-12 Dec", string(taps.NotStarted), 1, 1)
+	db.SetState(id, taps.InProgress)
+	th, err := db.GetThread(id)
+	if err != nil {
+		t.Fatalf("Could not get thread: %v", err)
+	}
+	if x, g := taps.InProgress, th.State; x != g {
+		t.Fatalf("Expected state %v; got %v", x, g)
 	}
 }
 

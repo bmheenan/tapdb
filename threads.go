@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/bmheenan/taps"
+
 	"github.com/go-sql-driver/mysql"
 )
 
@@ -168,5 +170,16 @@ func (db *mysqlDB) SetCostDir(thread int64, cost int) {
 	;`, cost, thread))
 	if err != nil {
 		panic(fmt.Sprintf("Could not set cost: %v", err))
+	}
+}
+
+func (db *mysqlDB) SetState(thread int64, state taps.State) {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	UPDATE threads
+	SET    state = '%v'
+	WHERE  id = %v
+	;`, state, thread))
+	if err != nil {
+		panic(fmt.Sprintf("Could not set state: %v", err))
 	}
 }

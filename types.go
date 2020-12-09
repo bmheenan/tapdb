@@ -94,6 +94,9 @@ type DBInterface interface {
 	// SetCostDir sets the direct cost of `thread` to `cost` (but does not update total cost)
 	SetCostDir(thread int64, cost int)
 
+	// SetState sets the stae of `thread` to `state`
+	SetState(thread int64, state taps.State)
+
 	// threadsget.go
 
 	// GetThread returns the Thread with id matching `thread`
@@ -137,6 +140,9 @@ type DBInterface interface {
 	// NewThreadStkLink makes `stk` a stakeholder of `thread`, with `thread` showing in `iter` in order `ord`, costing
 	// `cost` for this stakeholder and all subteams + teammembers
 	NewThreadStkLink(thread int64, stk, domain, iter string, ord int, cost int)
+
+	// DeleteThreadStkLink makes `stk` no longer a stakeholder of `thread`
+	DeleteThreadStkLink(thread int64, stk string)
 
 	// NewThreadHierLinkForStk makes `parent` a parent of `child` in `stk`'s context. `child` should be a descendant of
 	// `parent` and `stk` should be a stakeholder of both of them

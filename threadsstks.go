@@ -16,6 +16,17 @@ func (db *mysqlDB) NewThreadStkLink(thread int64, stk, domain, iter string, ord 
 	}
 }
 
+func (db *mysqlDB) DeleteThreadStkLink(thread int64, stk string) {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	DELETE FROM threads_stakeholders
+	WHERE       thread = %v
+	  AND       stk = '%v'
+	;`, thread, stk))
+	if err != nil {
+		panic(fmt.Sprintf("Could not delete thread stakeholder link: %v", err))
+	}
+}
+
 /*
 func (db *mysqlDB) NewThreadHierLinkForStk(parent, child int64, stk, domain string) error {
 	_, err := db.conn.Exec(fmt.Sprintf(`
