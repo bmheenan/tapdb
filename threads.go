@@ -183,3 +183,14 @@ func (db *mysqlDB) SetState(thread int64, state taps.State) {
 		panic(fmt.Sprintf("Could not set state: %v", err))
 	}
 }
+
+func (db *mysqlDB) SetOwner(thread int64, owner string) {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	UPDATE threads
+	SET    owner = '%v'
+	WHERE  id = %v
+	;`, owner, thread))
+	if err != nil {
+		panic(fmt.Sprintf("Could not set state: %v", err))
+	}
+}
