@@ -3,6 +3,8 @@ package tapdb
 import (
 	"fmt"
 	"math"
+
+	"github.com/go-sql-driver/mysql"
 )
 
 func (db *mysqlDB) NewThreadStkLink(thread int64, stk, domain, iter string, ord int, cost int) {
@@ -12,7 +14,10 @@ func (db *mysqlDB) NewThreadStkLink(thread int64, stk, domain, iter string, ord 
 	VALUES      (    %v, '%v',   '%v', '%v',  %v,   %v)
 	;`, thread, stk, domain, iter, ord, cost))
 	if err != nil {
-		panic(fmt.Sprintf("Could not add stakeholder %v to thread %v: %v", stk, thread, err))
+		sqlerr, ok := err.(*mysql.MySQLError)
+		if !ok || sqlerr.Number != 1062 { // 1062 = duplicate entry. If they're already linked, don't error
+			panic(fmt.Sprintf("Could not add stakeholder %v to thread %v: %v", stk, thread, err))
+		}
 	}
 }
 
