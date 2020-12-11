@@ -97,6 +97,9 @@ type DBInterface interface {
 	// SetState sets the stae of `thread` to `state`
 	SetState(thread int64, state taps.State)
 
+	// SetOwner sets the owner of `thread` to `owner`
+	SetOwner(thread int64, owner string)
+
 	// threadsget.go
 
 	// GetThread returns the Thread with id matching `thread`
