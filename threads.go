@@ -194,3 +194,14 @@ func (db *mysqlDB) SetOwner(thread int64, owner string) {
 		panic(fmt.Sprintf("Could not set state: %v", err))
 	}
 }
+
+func (db *mysqlDB) SetPercentile(thread int64, percentile float64) {
+	_, err := db.conn.Exec(fmt.Sprintf(`
+	UPDATE threads
+	SET    percentile = %v
+	WHERE  id = %v
+	;`, percentile, thread))
+	if err != nil {
+		panic(fmt.Sprintf("Could not set percentile: %v", err))
+	}
+}

@@ -100,6 +100,9 @@ type DBInterface interface {
 	// SetOwner sets the owner of `thread` to `owner`
 	SetOwner(thread int64, owner string)
 
+	// SetPercentile sets the percentile of `thread` to `percentile`
+	SetPercentile(thread int64, percentile float64)
+
 	// threadsget.go
 
 	// GetThread returns the Thread with id matching `thread`
