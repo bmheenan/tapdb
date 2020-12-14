@@ -374,7 +374,7 @@ func (db *mysqlDB) GetThreadrowsByStkIter(stk, iter string) (ths []taps.Threadro
 			panic(fmt.Sprintf("Could not get stakeholder for owner of thread: %v", err))
 		}
 		th.Owner = *o
-		db.fillThreadrowDesByStkIter(th.ID, &th.Children, stk, iter)
+		db.fillThreadrowDesByStkIter(th.ID, &th.Children, stk, iter, &map[int64]string{})
 		sort.Slice(th.Children, func(i, j int) bool {
 			return th.Children[i].Ord < th.Children[j].Ord
 		})
@@ -383,7 +383,7 @@ func (db *mysqlDB) GetThreadrowsByStkIter(stk, iter string) (ths []taps.Threadro
 	return ths
 }
 
-func (db *mysqlDB) fillThreadrowDesByStkIter(paID int64, children *[]taps.Threadrow, stk, iter string) {
+func (db *mysqlDB) fillThreadrowDesByStkIter(paID int64, children *[]taps.Threadrow, stk, iter string, added *map[int64]string) {
 	qr, err := db.conn.Query(fmt.Sprintf(`
 	SELECT      t.id
 	  ,         t.name
@@ -406,6 +406,7 @@ func (db *mysqlDB) fillThreadrowDesByStkIter(paID int64, children *[]taps.Thread
 		panic(fmt.Sprintf("Could not query for thread children: %v", err))
 	}
 	defer qr.Close()
+	skippedThs := map[int64]string{}
 	for qr.Next() {
 		th := taps.Threadrow{}
 		var (
@@ -427,13 +428,20 @@ func (db *mysqlDB) fillThreadrowDesByStkIter(paID int64, children *[]taps.Thread
 			th.Owner = *owner
 			th.Cost = int(sCost.Int32)
 			th.Ord = int(sOrd.Int32)
-			db.fillThreadrowDesByStkIter(th.ID, &th.Children, stk, iter)
+			db.fillThreadrowDesByStkIter(th.ID, &th.Children, stk, iter, added)
 			sort.Slice(th.Children, func(i, j int) bool {
 				return th.Children[i].Ord < th.Children[j].Ord
 			})
 			*children = append(*children, th)
+			(*added)[th.ID] = th.Name
 		} else {
-			db.fillThreadrowDesByStkIter(th.ID, children, stk, iter)
+			skippedThs[th.ID] = th.Name
+		}
+		for id, th := range skippedThs {
+			if _, ok := (*added)[id]; !ok {
+				(*added)[id] = th
+				db.fillThreadrowDesByStkIter(id, children, stk, iter, added)
+			}
 		}
 	}
 }

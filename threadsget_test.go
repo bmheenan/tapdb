@@ -256,6 +256,73 @@ func TestThreadrowByStkOrdering(t *testing.T) {
 	}
 }
 
+func TestGetThreadrosByStkWithMultiOwnersInTree(t *testing.T) {
+	db, _ := setupWithStks()
+	type setupItem struct {
+		name       string
+		owner      string
+		stks       []string
+		parent     string
+		ord        int
+		cost       int
+		percentile float64
+	}
+	domain := "example.com"
+	iter := "2020-10 Oct"
+	state := "notstarted"
+	setups := []setupItem{
+		setupItem{
+			name:       "A",
+			owner:      "a@" + domain,
+			stks:       []string{"a@" + domain},
+			ord:        10,
+			cost:       1,
+			percentile: 0,
+		},
+		setupItem{
+			name:       "B",
+			parent:     "A",
+			owner:      "b@" + domain,
+			stks:       []string{"a@" + domain, "b@" + domain},
+			ord:        8,
+			cost:       1,
+			percentile: 0,
+		},
+		setupItem{
+			name:       "C",
+			parent:     "B",
+			owner:      "a@" + domain,
+			stks:       []string{"a@" + domain, "b@" + domain},
+			ord:        6,
+			cost:       1,
+			percentile: 0,
+		},
+	}
+	ths := map[string]int64{}
+	for _, s := range setups {
+		ths[s.name] = db.NewThread(s.name, domain, s.owner, iter, state, s.percentile, s.cost)
+		if s.parent != "" {
+			db.NewThreadHierLink(ths[s.parent], ths[s.name], iter, s.ord, domain)
+		}
+		for _, stk := range s.stks {
+			db.NewThreadStkLink(ths[s.name], stk, domain, iter, s.ord, s.cost)
+		}
+	}
+	res := db.GetThreadrowsByStkIter("a@"+domain, iter)
+	if x, g := 1, len(res); x != g {
+		t.Fatalf("Expected overall length %v; got %v", x, g)
+	}
+	if x, g := 1, len(res[0].Children); x != g {
+		t.Fatalf("Expected length of A.children %v; got %v", x, g)
+	}
+	if x, g := 1, len(res[0].Children[0].Children); x != g {
+		t.Fatalf("Expected length of B.children %v; got %v", x, g)
+	}
+	if x, g := 0, len(res[0].Children[0].Children[0].Children); x != g {
+		t.Fatalf("Expected length of C.children %v; got %v", x, g)
+	}
+}
+
 func setupWithThreadsStks() (DBInterface, []string, map[string](int64), error) {
 	db, stks := setupWithStks()
 	errLStk := db.NewStkHierLink(stks[0], stks[1], "example.com")
